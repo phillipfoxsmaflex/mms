@@ -205,7 +205,7 @@ Before installing Atlas CMMS, ensure you have:
 
 3. **Start the application**:
    ```bash
-   docker-compose up -d
+   docker-compose up --build 
    ```
 
 4. **Access the application**:
