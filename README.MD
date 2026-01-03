@@ -30,30 +30,13 @@
 
 ## 🎯 Overview
 
-**Atlas CMMS** is a comprehensive, self-hosted Computerized Maintenance Management System (CMMS) designed to simplify and automate maintenance operations across multiple industries. Built with modern technologies and containerized with Docker, it provides enterprise-grade features while remaining easy to deploy and maintain.
-
-Think of it as **Jira for technicians** – a complete solution for managing work orders, assets, inventory, preventive maintenance, and analytics.
-
-### 🏢 Target Industries
-
-Atlas CMMS is versatile and suitable for various industries:
-
-- **Facilities Management** - Buildings, property, real estate maintenance
-- **Manufacturing** - Production machinery and equipment tracking
-- **Healthcare** - Medical equipment maintenance and compliance
-- **Hospitality** - Hotels, resorts, and venue management
-- **Public Sector** - Infrastructure and public building maintenance
-- **Education** - Campus and facility maintenance
-- **Utilities** - Power, water, and energy system management
-- **Transportation** - Fleet and vehicle maintenance
+**MMS** is a comprehensive, self-hosted Maintenance Management System (MMS) designed to simplify and automate maintenance operations.
 
 ### 🌟 Why MMS?
 
 - ✅ **Self-Hosted** - Full control over your data and infrastructure
 - ✅ **Open Source** - Transparent, customizable, and community-driven
 - ✅ **Docker-Based** - Easy deployment and scalability
-- ✅ **Enterprise-Ready** - Role-based access, SSO, audit trails
-- ✅ **Feature-Rich** - Comprehensive CMMS functionality out-of-the-box
 
 ---
 
