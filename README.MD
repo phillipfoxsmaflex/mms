@@ -1,7 +1,7 @@
 <div align="center">
   <h1>MMS</h1>
   <p><strong>Maintenance Management System</strong></p>
-  <p>A powerful, self-hosted maintenance management system for web, mobile, and enterprise</p>
+  <p>A powerful, self-hosted maintenance management system for web</p>
   
   [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
   [![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
