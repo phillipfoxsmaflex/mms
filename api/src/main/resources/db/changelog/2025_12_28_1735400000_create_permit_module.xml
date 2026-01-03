@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <!-- Create permit_location table -->
+    <changeSet id="create-permit-location-table" author="system">
+        <createTable tableName="permit_location">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="facility" type="VARCHAR(255)"/>
+            <column name="building" type="VARCHAR(255)"/>
+            <column name="floor" type="VARCHAR(100)"/>
+            <column name="area" type="VARCHAR(255)"/>
+            <column name="latitude" type="DOUBLE"/>
+            <column name="longitude" type="DOUBLE"/>
+            <column name="address" type="TEXT"/>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true"/>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="permit_location" baseColumnNames="company_id"
+                                 constraintName="fk_permit_location_company"
+                                 referencedTableName="company" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create permit table -->
+    <changeSet id="create-permit-table" author="system">
+        <createTable tableName="permit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="custom_id" type="BIGINT"/>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="permit_type" type="VARCHAR(50)"/>
+            <column name="status" type="VARCHAR(50)" defaultValue="DRAFT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="risk_level" type="VARCHAR(50)" defaultValue="LOW"/>
+            <column name="permit_location_id" type="BIGINT"/>
+            <column name="start_date" type="TIMESTAMP"/>
+            <column name="end_date" type="TIMESTAMP"/>
+            <column name="safety_requirements" type="TEXT"/>
+            <column name="equipment_needed" type="TEXT"/>
+            <column name="hazards_identified" type="TEXT"/>
+            <column name="control_measures" type="TEXT"/>
+            <column name="emergency_procedures" type="TEXT"/>
+            <column name="ppe_required" type="TEXT"/>
+            <column name="special_instructions" type="TEXT"/>
+            <column name="rejection_reason" type="TEXT"/>
+            <column name="cancellation_reason" type="TEXT"/>
+            <column name="approved_by_id" type="BIGINT"/>
+            <column name="approved_at" type="TIMESTAMP"/>
+            <column name="completed_by_id" type="BIGINT"/>
+            <column name="completed_at" type="TIMESTAMP"/>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="permit" baseColumnNames="company_id"
+                                 constraintName="fk_permit_company"
+                                 referencedTableName="company" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="permit" baseColumnNames="permit_location_id"
+                                 constraintName="fk_permit_location"
+                                 referencedTableName="permit_location" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+        <addForeignKeyConstraint baseTableName="permit" baseColumnNames="approved_by_id"
+                                 constraintName="fk_permit_approved_by"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+        <addForeignKeyConstraint baseTableName="permit" baseColumnNames="completed_by_id"
+                                 constraintName="fk_permit_completed_by"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- Create permit_assigned_users join table -->
+    <changeSet id="create-permit-assigned-users-table" author="system">
+        <createTable tableName="permit_assigned_users">
+            <column name="permit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="permit_assigned_users" columnNames="permit_id,user_id"/>
+        <addForeignKeyConstraint baseTableName="permit_assigned_users" baseColumnNames="permit_id"
+                                 constraintName="fk_permit_assigned_users_permit"
+                                 referencedTableName="permit" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="permit_assigned_users" baseColumnNames="user_id"
+                                 constraintName="fk_permit_assigned_users_user"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create permit_teams join table -->
+    <changeSet id="create-permit-teams-table" author="system">
+        <createTable tableName="permit_teams">
+            <column name="permit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="team_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="permit_teams" columnNames="permit_id,team_id"/>
+        <addForeignKeyConstraint baseTableName="permit_teams" baseColumnNames="permit_id"
+                                 constraintName="fk_permit_teams_permit"
+                                 referencedTableName="permit" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="permit_teams" baseColumnNames="team_id"
+                                 constraintName="fk_permit_teams_team"
+                                 referencedTableName="team" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create permit_files join table -->
+    <changeSet id="create-permit-files-table" author="system">
+        <createTable tableName="permit_files">
+            <column name="permit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="permit_files" columnNames="permit_id,file_id"/>
+        <addForeignKeyConstraint baseTableName="permit_files" baseColumnNames="permit_id"
+                                 constraintName="fk_permit_files_permit"
+                                 referencedTableName="permit" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="permit_files" baseColumnNames="file_id"
+                                 constraintName="fk_permit_files_file"
+                                 referencedTableName="file" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create moc_change_request table -->
+    <changeSet id="create-moc-change-request-table" author="system">
+        <createTable tableName="moc_change_request">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="change_type" type="VARCHAR(255)"/>
+            <column name="reason_for_change" type="TEXT"/>
+            <column name="risk_assessment" type="TEXT"/>
+            <column name="impact_analysis" type="TEXT"/>
+            <column name="status" type="VARCHAR(50)" defaultValue="DRAFT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="priority" type="VARCHAR(50)"/>
+            <column name="permit_id" type="BIGINT"/>
+            <column name="requested_by_id" type="BIGINT"/>
+            <column name="approved_by_id" type="BIGINT"/>
+            <column name="approved_at" type="TIMESTAMP"/>
+            <column name="implemented_by_id" type="BIGINT"/>
+            <column name="implemented_at" type="TIMESTAMP"/>
+            <column name="closed_by_id" type="BIGINT"/>
+            <column name="closed_at" type="TIMESTAMP"/>
+            <column name="rejection_reason" type="TEXT"/>
+            <column name="target_implementation_date" type="TIMESTAMP"/>
+            <column name="actual_implementation_date" type="TIMESTAMP"/>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="moc_change_request" baseColumnNames="company_id"
+                                 constraintName="fk_moc_change_request_company"
+                                 referencedTableName="company" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="moc_change_request" baseColumnNames="permit_id"
+                                 constraintName="fk_moc_change_request_permit"
+                                 referencedTableName="permit" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+        <addForeignKeyConstraint baseTableName="moc_change_request" baseColumnNames="requested_by_id"
+                                 constraintName="fk_moc_change_request_requested_by"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+        <addForeignKeyConstraint baseTableName="moc_change_request" baseColumnNames="approved_by_id"
+                                 constraintName="fk_moc_change_request_approved_by"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+        <addForeignKeyConstraint baseTableName="moc_change_request" baseColumnNames="implemented_by_id"
+                                 constraintName="fk_moc_change_request_implemented_by"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+        <addForeignKeyConstraint baseTableName="moc_change_request" baseColumnNames="closed_by_id"
+                                 constraintName="fk_moc_change_request_closed_by"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- Create moc_action table -->
+    <changeSet id="create-moc-action-table" author="system">
+        <createTable tableName="moc_action">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="status" type="VARCHAR(50)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="priority" type="VARCHAR(50)"/>
+            <column name="moc_change_request_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="assigned_to_id" type="BIGINT"/>
+            <column name="due_date" type="TIMESTAMP"/>
+            <column name="completed_at" type="TIMESTAMP"/>
+            <column name="completion_notes" type="TEXT"/>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="moc_action" baseColumnNames="company_id"
+                                 constraintName="fk_moc_action_company"
+                                 referencedTableName="company" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="moc_action" baseColumnNames="moc_change_request_id"
+                                 constraintName="fk_moc_action_moc_change_request"
+                                 referencedTableName="moc_change_request" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="moc_action" baseColumnNames="assigned_to_id"
+                                 constraintName="fk_moc_action_assigned_to"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- Create moc_approval table -->
+    <changeSet id="create-moc-approval-table" author="system">
+        <createTable tableName="moc_approval">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approval_level" type="INT"/>
+            <column name="moc_change_request_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approver_id" type="BIGINT"/>
+            <column name="approved_at" type="TIMESTAMP"/>
+            <column name="comments" type="TEXT"/>
+            <column name="rejection_reason" type="TEXT"/>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="moc_approval" baseColumnNames="company_id"
+                                 constraintName="fk_moc_approval_company"
+                                 referencedTableName="company" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="moc_approval" baseColumnNames="moc_change_request_id"
+                                 constraintName="fk_moc_approval_moc_change_request"
+                                 referencedTableName="moc_change_request" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="moc_approval" baseColumnNames="approver_id"
+                                 constraintName="fk_moc_approval_approver"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- Add permit_sequence column to custom_sequence table -->
+    <changeSet id="add-permit-sequence-column" author="system">
+        <addColumn tableName="custom_sequence">
+            <column name="permit_sequence" type="BIGINT" defaultValueNumeric="1"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- Create indexes for better query performance -->
+    <changeSet id="create-permit-indexes" author="system">
+        <createIndex tableName="permit" indexName="idx_permit_company_id">
+            <column name="company_id"/>
+        </createIndex>
+        <createIndex tableName="permit" indexName="idx_permit_status">
+            <column name="status"/>
+        </createIndex>
+        <createIndex tableName="permit" indexName="idx_permit_location_id">
+            <column name="permit_location_id"/>
+        </createIndex>
+        <createIndex tableName="permit_location" indexName="idx_permit_location_company_id">
+            <column name="company_id"/>
+        </createIndex>
+        <createIndex tableName="moc_change_request" indexName="idx_moc_change_request_company_id">
+            <column name="company_id"/>
+        </createIndex>
+        <createIndex tableName="moc_change_request" indexName="idx_moc_change_request_status">
+            <column name="status"/>
+        </createIndex>
+        <createIndex tableName="moc_change_request" indexName="idx_moc_change_request_permit_id">
+            <column name="permit_id"/>
+        </createIndex>
+        <createIndex tableName="moc_action" indexName="idx_moc_action_moc_change_request_id">
+            <column name="moc_change_request_id"/>
+        </createIndex>
+        <createIndex tableName="moc_approval" indexName="idx_moc_approval_moc_change_request_id">
+            <column name="moc_change_request_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

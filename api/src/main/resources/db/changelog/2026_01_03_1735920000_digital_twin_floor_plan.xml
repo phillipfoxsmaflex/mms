@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <!-- Add position fields to asset table -->
+    <changeSet id="2026_01_03_1735920000-1" author="OpenHands">
+        <addColumn tableName="asset">
+            <column name="position_x" type="double">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026_01_03_1735920000-2" author="OpenHands">
+        <addColumn tableName="asset">
+            <column name="position_y" type="double">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026_01_03_1735920000-3" author="OpenHands">
+        <addColumn tableName="asset">
+            <column name="floor_plan_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026_01_03_1735920000-4" author="OpenHands">
+        <addForeignKeyConstraint baseTableName="asset"
+                                 baseColumnNames="floor_plan_id"
+                                 constraintName="fk_asset_floor_plan"
+                                 referencedTableName="floor_plan"
+                                 referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- Add dimension fields to floor_plan table -->
+    <changeSet id="2026_01_03_1735920000-5" author="OpenHands">
+        <addColumn tableName="floor_plan">
+            <column name="image_width" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026_01_03_1735920000-6" author="OpenHands">
+        <addColumn tableName="floor_plan">
+            <column name="image_height" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2026_01_03_1735920000-7" author="OpenHands">
+        <addColumn tableName="floor_plan">
+            <column name="display_order" type="integer" defaultValue="0">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

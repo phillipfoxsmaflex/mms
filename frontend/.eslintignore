@@ -1,0 +1,6 @@
+# .estlintignore file
+dist
+build
+node_modules/
+commitlint.config.ts
+public/runtime-env.js

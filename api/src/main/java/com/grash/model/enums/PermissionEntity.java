@@ -1,0 +1,23 @@
+package com.grash.model.enums;
+
+public enum PermissionEntity {
+    PEOPLE_AND_TEAMS,
+    CATEGORIES,
+    CATEGORIES_WEB,
+    WORK_ORDERS,
+    PREVENTIVE_MAINTENANCES,
+    PERMITS,
+    ASSETS,
+    PARTS_AND_MULTIPARTS,
+    PURCHASE_ORDERS,
+    METERS,
+    VENDORS_AND_CUSTOMERS,
+    FILES,
+    LOCATIONS,
+    SETTINGS,
+    REQUESTS,
+    ANALYTICS,
+    PERMIT_LOCATIONS,
+    MOC_REQUESTS,
+    DOCUMENTS
+}

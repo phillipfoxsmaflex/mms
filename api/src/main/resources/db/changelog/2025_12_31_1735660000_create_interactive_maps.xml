@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Create location_image table -->
+    <changeSet id="2025_12_31_1735660000_create_location_image_table" author="openhands">
+        <createTable tableName="location_image">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="file_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="location_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by_id" type="BIGINT"/>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="location_image"
+                                 baseColumnNames="file_id"
+                                 constraintName="fk_location_image_file"
+                                 referencedTableName="file"
+                                 referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint baseTableName="location_image"
+                                 baseColumnNames="location_id"
+                                 constraintName="fk_location_image_location"
+                                 referencedTableName="location"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="location_image"
+                                 baseColumnNames="created_by_id"
+                                 constraintName="fk_location_image_user"
+                                 referencedTableName="own_user"
+                                 referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- Create asset_hotspot table -->
+    <changeSet id="2025_12_31_1735660000_create_asset_hotspot_table" author="openhands">
+        <createTable tableName="asset_hotspot">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="asset_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="location_image_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="x_position" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="y_position" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(255)"/>
+            <column name="icon_type" type="VARCHAR(50)" defaultValue="DEFAULT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="color" type="VARCHAR(20)" defaultValue="#1976d2"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="asset_hotspot"
+                                 baseColumnNames="asset_id"
+                                 constraintName="fk_asset_hotspot_asset"
+                                 referencedTableName="asset"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="asset_hotspot"
+                                 baseColumnNames="location_image_id"
+                                 constraintName="fk_asset_hotspot_location_image"
+                                 referencedTableName="location_image"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create indexes -->
+    <changeSet id="2025_12_31_1735660000_create_indexes" author="openhands">
+        <createIndex indexName="idx_location_image_location" tableName="location_image">
+            <column name="location_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_location_image_active" tableName="location_image">
+            <column name="is_active"/>
+        </createIndex>
+
+        <createIndex indexName="idx_asset_hotspot_asset" tableName="asset_hotspot">
+            <column name="asset_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_asset_hotspot_location_image" tableName="asset_hotspot">
+            <column name="location_image_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_asset_hotspot_active" tableName="asset_hotspot">
+            <column name="is_active"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Add unique constraint to prevent duplicate hotspots -->
+    <changeSet id="2025_12_31_1735660000_add_unique_constraint" author="openhands">
+        <addUniqueConstraint tableName="asset_hotspot"
+                             columnNames="asset_id, location_image_id"
+                             constraintName="uk_asset_hotspot_asset_image"/>
+    </changeSet>
+
+</databaseChangeLog>

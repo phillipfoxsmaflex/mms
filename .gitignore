@@ -1,0 +1,18 @@
+.env
+.env.genaiscript
+.genaiscript
+.DS_Store
+**/.DS_Store
+atlas_backups
+docker-compose-dev.yml
+logo
+
+# Logs
+*.log
+**/*.log
+
+# MinIO data directory
+minio-data/
+
+# Test scripts
+test_api.sh

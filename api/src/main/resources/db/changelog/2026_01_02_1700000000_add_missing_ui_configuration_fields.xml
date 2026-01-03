@@ -1,0 +1,187 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20260102170000-1" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="work_orders"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="work_orders" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-2" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="preventive_maintenance"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="preventive_maintenance" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-3" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="permit_to_work"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="permit_to_work" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-4" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="statistics"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="statistics" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-5" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="assets"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="assets" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-6" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="parts_and_inventory"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="parts_and_inventory" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-7" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="purchase_orders"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="purchase_orders" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-8" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="people_teams"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="people_teams" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-9" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="categories"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="categories" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-10" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="files"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="files" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-11" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="settings"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="settings" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-12" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="locations"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="locations" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-13" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="meters"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="meters" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260102170000-14" author="openhands">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ui_configuration" columnName="vendors_and_customers"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ui_configuration">
+            <column name="vendors_and_customers" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

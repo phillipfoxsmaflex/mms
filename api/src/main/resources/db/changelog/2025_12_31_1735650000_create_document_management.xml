@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <!-- Create document table -->
+    <changeSet id="2025_12_31_1735650000-1" author="openhands">
+        <createTable tableName="document">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="file_path" type="VARCHAR(500)"/>
+            <column name="file_size" type="BIGINT"/>
+            <column name="mime_type" type="VARCHAR(100)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by_id" type="BIGINT"/>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_document_id" type="BIGINT"/>
+            <column name="is_folder" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(50)"/>
+            <column name="entity_id" type="BIGINT"/>
+            <column name="version" type="INTEGER" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Add foreign key constraints -->
+    <changeSet id="2025_12_31_1735650000-2" author="openhands">
+        <addForeignKeyConstraint
+                baseTableName="document"
+                baseColumnNames="created_by_id"
+                constraintName="fk_document_created_by"
+                referencedTableName="own_user"
+                referencedColumnNames="id"
+                onDelete="SET NULL"/>
+        
+        <addForeignKeyConstraint
+                baseTableName="document"
+                baseColumnNames="company_id"
+                constraintName="fk_document_company"
+                referencedTableName="company"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+                baseTableName="document"
+                baseColumnNames="parent_document_id"
+                constraintName="fk_document_parent"
+                referencedTableName="document"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create indexes -->
+    <changeSet id="2025_12_31_1735650000-3" author="openhands">
+        <createIndex indexName="idx_document_entity" tableName="document">
+            <column name="entity_type"/>
+            <column name="entity_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_document_parent" tableName="document">
+            <column name="parent_document_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_document_company" tableName="document">
+            <column name="company_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_document_active" tableName="document">
+            <column name="is_active"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Create document_tags table for tags collection -->
+    <changeSet id="2025_12_31_1735650000-4" author="openhands">
+        <createTable tableName="document_tags">
+            <column name="document_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tag" type="VARCHAR(255)"/>
+        </createTable>
+        
+        <addForeignKeyConstraint
+                baseTableName="document_tags"
+                baseColumnNames="document_id"
+                constraintName="fk_document_tags_document"
+                referencedTableName="document"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create document_permission table -->
+    <changeSet id="2025_12_31_1735650000-5" author="openhands">
+        <createTable tableName="document_permission">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="document_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT"/>
+            <column name="role_id" type="BIGINT"/>
+            <column name="permission_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Add foreign key constraints for document_permission -->
+    <changeSet id="2025_12_31_1735650000-6" author="openhands">
+        <addForeignKeyConstraint
+                baseTableName="document_permission"
+                baseColumnNames="document_id"
+                constraintName="fk_doc_permission_document"
+                referencedTableName="document"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+                baseTableName="document_permission"
+                baseColumnNames="user_id"
+                constraintName="fk_doc_permission_user"
+                referencedTableName="own_user"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+                baseTableName="document_permission"
+                baseColumnNames="role_id"
+                constraintName="fk_doc_permission_role"
+                referencedTableName="role"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create indexes for document_permission -->
+    <changeSet id="2025_12_31_1735650000-7" author="openhands">
+        <createIndex indexName="idx_doc_permission_doc" tableName="document_permission">
+            <column name="document_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_doc_permission_user" tableName="document_permission">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Create default document structure for existing locations -->
+    <changeSet id="2025_12_31_1735650000-8" author="openhands">
+        <sql>
+            INSERT INTO document (name, is_folder, entity_type, entity_id, company_id, is_active, version, created_at, updated_at)
+            SELECT 
+                folder_name,
+                true,
+                'LOCATION',
+                l.id,
+                l.company_id,
+                true,
+                1,
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+            FROM location l
+            CROSS JOIN (
+                SELECT 'Manuals' AS folder_name
+                UNION ALL SELECT 'Certificates'
+                UNION ALL SELECT 'Maintenance Records'
+                UNION ALL SELECT 'Photos'
+                UNION ALL SELECT 'Reports'
+            ) folders
+            WHERE NOT EXISTS (
+                SELECT 1 FROM document d 
+                WHERE d.name = folder_name 
+                AND d.entity_type = 'LOCATION' 
+                AND d.entity_id = l.id 
+                AND d.company_id = l.company_id
+            );
+        </sql>
+    </changeSet>
+
+    <!-- Create default document structure for existing assets -->
+    <changeSet id="2025_12_31_1735650000-9" author="openhands">
+        <sql>
+            INSERT INTO document (name, is_folder, entity_type, entity_id, company_id, is_active, version, created_at, updated_at)
+            SELECT 
+                folder_name,
+                true,
+                'ASSET',
+                a.id,
+                a.company_id,
+                true,
+                1,
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+            FROM asset a
+            CROSS JOIN (
+                SELECT 'Manuals' AS folder_name
+                UNION ALL SELECT 'Certificates'
+                UNION ALL SELECT 'Maintenance Records'
+                UNION ALL SELECT 'Photos'
+                UNION ALL SELECT 'Reports'
+            ) folders
+            WHERE NOT EXISTS (
+                SELECT 1 FROM document d 
+                WHERE d.name = folder_name 
+                AND d.entity_type = 'ASSET' 
+                AND d.entity_id = a.id 
+                AND d.company_id = a.company_id
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
