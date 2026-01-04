@@ -104,6 +104,12 @@ public class NotificationService {
             }
         });
 
+        // If there are no valid tokens, skip push notification sending
+        if (tokens.isEmpty()) {
+            System.out.println("No valid push notification tokens found. Skipping push notification.");
+            return;
+        }
+
         ExpoPushMessage expoPushMessage = new ExpoPushMessage();
         expoPushMessage.getTo().addAll(tokens);
         expoPushMessage.setTitle(title);
