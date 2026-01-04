@@ -110,7 +110,7 @@ public class UserService {
     private EnhancedSignupResponse<OwnUser> enableAndReturnToken(OwnUser user, boolean sendEmailToSuperAdmins,
                                                                 UserSignupRequest userSignupRequest) {
         user.setEnabled(true);
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
         if (sendEmailToSuperAdmins)
             sendRegistrationMailToSuperAdmins(user, userSignupRequest);
         onCompanyAndUserCreation(user);
@@ -248,7 +248,7 @@ public class UserService {
                 throw new CustomException("You can't add more users to this company", HttpStatus.NOT_ACCEPTABLE);
         }
         user.setEnabled(true);
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
     }
 
     public SuccessResponse resetPasswordRequest(String email) {
