@@ -441,7 +441,7 @@ public class AssetService {
     }
 
     public Collection<Asset> findByLocationAndFloorPlanIsNull(Long locationId) {
-        return assetRepository.findByLocationIdAndFloorPlanIsNull(locationId);
+        return assetRepository.findByLocation_IdAndFloorPlanIsNull(locationId);
     }
 
     @Transactional

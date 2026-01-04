@@ -240,9 +240,16 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     try {
       const response = await axios.get(`/locations/${locationId}/assets/unmapped`);
       setUnmappedAssets(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch unmapped assets:', error);
-      showSnackBar('Failed to load unmapped assets', 'error');
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: errorMessage,
+        data: error.response?.data
+      });
+      showSnackBar(`Failed to load unmapped assets: ${errorMessage}`, 'error');
     }
   };
 

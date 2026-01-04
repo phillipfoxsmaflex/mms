@@ -214,9 +214,20 @@ public class LocationController {
         OwnUser user = userService.whoami(req);
         Optional<Location> optionalLocation = locationService.findById(id);
         if (optionalLocation.isPresent()) {
-            return assetService.findByLocationAndFloorPlanIsNull(id).stream()
-                    .map(asset -> assetMapper.toShowDto(asset, assetService))
-                    .collect(Collectors.toList());
+            Location savedLocation = optionalLocation.get();
+            if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
+                if (user.getRole().getViewPermissions().contains(PermissionEntity.ASSETS)) {
+                    boolean canViewOthers = user.getRole().getViewOtherPermissions().contains(PermissionEntity.ASSETS);
+                    return assetService.findByLocationAndFloorPlanIsNull(id).stream()
+                            .filter(asset -> canViewOthers || asset.getCreatedBy().equals(user.getId()))
+                            .map(asset -> assetMapper.toShowDto(asset, assetService))
+                            .collect(Collectors.toList());
+                } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
+            } else {
+                return assetService.findByLocationAndFloorPlanIsNull(id).stream()
+                        .map(asset -> assetMapper.toShowDto(asset, assetService))
+                        .collect(Collectors.toList());
+            }
         } else throw new CustomException("Location not found", HttpStatus.NOT_FOUND);
     }
 

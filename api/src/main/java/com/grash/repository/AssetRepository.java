@@ -38,6 +38,6 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
 
     void deleteByCompany_IdAndIsDemoTrue(Long companyId);
 
-    Collection<Asset> findByLocationIdAndFloorPlanIsNull(Long locationId);
+    Collection<Asset> findByLocation_IdAndFloorPlanIsNull(Long locationId);
 }
 
