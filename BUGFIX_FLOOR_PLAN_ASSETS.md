@@ -14,7 +14,48 @@ java.lang.IndexOutOfBoundsException: Index 0 out of bounds for length 0
 
 ## Root Cause Analyse
 
-### Problem 1: NotificationService IndexOutOfBoundsException (SEKUNDÄR)
+### Problem 1: Spring Controller Mapping Reihenfolge (PRIMÄR - 404 NOT FOUND)
+
+**Location:** `api/src/main/java/com/grash/controller/LocationController.java`
+
+**Das Hauptproblem:**
+Der Endpoint `/{id}/assets/unmapped` stand **nach** dem generischen Endpoint `/{id}` im Code.
+
+**Original-Reihenfolge (FALSCH):**
+```java
+@GetMapping("/{id}")                      // Zeile 127
+public LocationShowDTO getById(...) {}
+
+// ... andere Mappings ...
+
+@GetMapping("/{id}/assets/unmapped")      // Zeile 206
+public Collection<AssetShowDTO> getUnmappedAssets(...) {}
+```
+
+**Problem:**
+- Spring interpretiert Requests von **oben nach unten**
+- Ein Request zu `/locations/79/assets/unmapped` wurde zuerst gegen `/{id}` geprüft
+- Spring versuchte, `"assets"` als `id` zu parsen (Long)
+- Da `"assets"` keine Zahl ist, wurde der Request abgelehnt → **404 Not Found**
+
+**Lösung:**
+Spezifischere Pfade müssen **vor** generischen Pfaden stehen!
+
+**Korrigierte Reihenfolge (RICHTIG):**
+```java
+@GetMapping("/{id}/assets/unmapped")      // Jetzt Zeile 127
+public Collection<AssetShowDTO> getUnmappedAssets(...) {}
+
+@GetMapping("/{id}")                      // Jetzt Zeile 155
+public LocationShowDTO getById(...) {}
+```
+
+**Effekt:**
+- Spring prüft zuerst den spezifischeren Pfad `/{id}/assets/unmapped`
+- Nur wenn dieser nicht passt, wird `/{id}` geprüft
+- Requests zu `/locations/79/assets/unmapped` werden jetzt korrekt geroutet
+
+### Problem 2: NotificationService IndexOutOfBoundsException (SEKUNDÄR)
 
 **Location:** `api/src/main/java/com/grash/service/NotificationService.java`
 
@@ -27,7 +68,7 @@ Der NotificationService wirft einen `IndexOutOfBoundsException` wenn:
 
 **Impact:** Dieser Fehler tritt asynchron auf (in MyExecutor Thread) und blockiert nicht den Hauptrequest. Er ist NICHT die Hauptursache für "Failed to load unmapped assets".
 
-### Problem 2: Axios Response Interceptor (PRIMÄR)
+### Problem 3: Axios Response Interceptor
 
 **Location:** `frontend/src/utils/axios.ts`
 
@@ -48,8 +89,9 @@ axiosInt.interceptors.response.use(
 - Bei Fehlern wurde nur `error.response.data` ODER der String `'There is an error!'` weitergegeben
 - Das vollständige Error-Objekt mit `status`, `statusText`, `headers`, etc. ging verloren
 - Frontend konnte nicht debuggen, was genau schiefgelaufen ist
+- **Ohne diesen Fix hätten wir nie erkannt, dass es ein 404-Fehler war!**
 
-### Problem 3: Mögliche Authentifizierung (HYPOTHESE)
+### Problem 4: Mögliche Authentifizierung (HYPOTHESE - War nicht die Ursache)
 
 **Location:** `api/src/main/java/com/grash/controller/LocationController.java`
 
@@ -70,7 +112,29 @@ public Collection<AssetShowDTO> getUnmappedAssets(@PathVariable("id") Long id, H
 
 ## Implementierte Fixes
 
-### Fix 1: NotificationService - IndexOutOfBoundsException Check
+### Fix 1: Spring Controller Mapping Reihenfolge (KRITISCHER FIX für 404)
+
+**File:** `api/src/main/java/com/grash/controller/LocationController.java`
+
+**Änderung:**
+Die Methode `getUnmappedAssets` wurde von Zeile 206 nach Zeile 127 verschoben, **vor** die generische `getById` Methode.
+
+**Neue Reihenfolge der Mappings:**
+```
+Zeile 116: @GetMapping("/mini")
+Zeile 127: @GetMapping("/{id}/assets/unmapped")     ← JETZT VOR /{id}
+Zeile 155: @GetMapping("/{id}")                     ← Generisches Mapping am Ende
+Zeile 172: @PostMapping("")
+Zeile 188: @PatchMapping("/{id}")
+Zeile 216: @DeleteMapping("/{id}")
+```
+
+**Effekt:**
+- Spring prüft spezifischere Pfade zuerst
+- Requests zu `/locations/79/assets/unmapped` werden jetzt korrekt geroutet
+- **404 Not Found Fehler ist behoben**
+
+### Fix 2: NotificationService - IndexOutOfBoundsException Check
 
 **File:** `api/src/main/java/com/grash/service/NotificationService.java`
 
@@ -88,7 +152,7 @@ if (allTickets.isEmpty()) {
 - Stoppt die weitere Verarbeitung, wenn keine Tickets vorhanden sind
 - Verhindert Fehler-Logs im Backend
 
-### Fix 2: Axios Response Interceptor - Enhanced Error Logging
+### Fix 3: Axios Response Interceptor - Enhanced Error Logging
 
 **File:** `frontend/src/utils/axios.ts`
 
@@ -301,10 +365,11 @@ Collection<Asset> findByLocation_IdAndFloorPlanIsNull(Long locationId);
 ## Zusammenfassung
 
 ### Gefixte Probleme:
-1. ✅ NotificationService `IndexOutOfBoundsException` 
-2. ✅ Axios Response Interceptor - Enhanced Error Logging
-3. ✅ (Vorheriger Commit) Axios baseURL konfiguriert
-4. ✅ (Vorheriger Commit) Repository Query korrigiert
+1. ✅ **Spring Controller Mapping Reihenfolge** - Hauptproblem für 404 Fehler
+2. ✅ NotificationService `IndexOutOfBoundsException` 
+3. ✅ Axios Response Interceptor - Enhanced Error Logging (ermöglichte Diagnose!)
+4. ✅ (Vorheriger Commit) Axios baseURL konfiguriert
+5. ✅ (Vorheriger Commit) Repository Query korrigiert
 
 ### Nächste Schritte:
 1. Docker Container neu bauen
