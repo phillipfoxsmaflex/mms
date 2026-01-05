@@ -1,14 +1,27 @@
 #!/bin/bash
 
 # Diagnose Script für Floor Plan Asset Endpoint
-# Usage: ./diagnose-endpoint.sh <LOCATION_ID> [ACCESS_TOKEN]
+# Usage: ./diagnose-endpoint.sh <LOCATION_ID> [ACCESS_TOKEN] [PORT]
 
 LOCATION_ID=${1:-79}
 ACCESS_TOKEN=${2:-""}
+PORT=${3:-""}
 
 echo "========================================="
 echo "Floor Plan Asset Endpoint Diagnose"
 echo "========================================="
+echo ""
+
+# Auto-detect backend port from docker compose
+if [ -z "$PORT" ]; then
+    PORT=$(docker compose port api 8080 2>/dev/null | cut -d: -f2)
+    if [ -z "$PORT" ]; then
+        echo "⚠️  Cannot auto-detect backend port, trying default 8080..."
+        PORT=8080
+    else
+        echo "ℹ️  Auto-detected backend port: $PORT"
+    fi
+fi
 echo ""
 
 # Check if Docker containers are running
@@ -46,7 +59,7 @@ echo ""
 
 # Test endpoint without authentication (should get 401 or 403)
 echo "4. Testing endpoint accessibility (without auth)..."
-RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080/locations/$LOCATION_ID/assets/unmapped")
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/locations/$LOCATION_ID/assets/unmapped")
 case $RESPONSE in
     401|403)
         echo "   ✅ Endpoint exists (got $RESPONSE - authentication required)"
@@ -60,7 +73,8 @@ case $RESPONSE in
         ;;
     000)
         echo "   ❌ Cannot connect to backend (got 000)"
-        echo "   → Check if backend is running and port 8080 is accessible"
+        echo "   → Check if backend is running and port $PORT is accessible"
+        echo "   → Your port mapping: $(docker compose ps api 2>/dev/null | grep api || echo 'unknown')"
         ;;
     *)
         echo "   ⚠️  Unexpected response: $RESPONSE"
@@ -71,7 +85,8 @@ echo ""
 # Test with authentication if token provided
 if [ -n "$ACCESS_TOKEN" ]; then
     echo "5. Testing endpoint WITH authentication..."
-    FULL_RESPONSE=$(curl -s -w "\n%{http_code}" "http://localhost:8080/locations/$LOCATION_ID/assets/unmapped" \
+    echo "   URL: http://localhost:$PORT/locations/$LOCATION_ID/assets/unmapped"
+    FULL_RESPONSE=$(curl -s -w "\n%{http_code}" "http://localhost:$PORT/locations/$LOCATION_ID/assets/unmapped" \
         -H "Authorization: Bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json")
     
@@ -103,7 +118,7 @@ if [ -n "$ACCESS_TOKEN" ]; then
 else
     echo "5. Skipping authenticated test (no token provided)"
     echo "   To test with auth, run:"
-    echo "   ./diagnose-endpoint.sh $LOCATION_ID <YOUR_ACCESS_TOKEN>"
+    echo "   ./diagnose-endpoint.sh $LOCATION_ID <YOUR_ACCESS_TOKEN> $PORT"
 fi
 echo ""
 
@@ -119,14 +134,17 @@ echo "========================================="
 echo "Summary"
 echo "========================================="
 echo "Location ID tested: $LOCATION_ID"
+echo "Backend Port: $PORT"
+echo "Backend URL: http://localhost:$PORT"
 echo ""
 echo "Next steps:"
 echo "1. If you see '404 Not Found' → Rebuild: docker compose build --no-cache"
 echo "2. If you see '401/403' → Get a valid JWT token from browser localStorage"
-echo "3. If you see '200 OK' → Check frontend Network tab for the actual request"
+echo "3. If you see '200 OK' → Backend works! Check frontend config"
+echo "4. If you see '000' → Backend not responding on port $PORT"
 echo ""
 echo "To get your JWT token:"
 echo "  1. Open browser DevTools (F12)"
 echo "  2. Go to Application tab → Local Storage"
 echo "  3. Copy value of 'accessToken'"
-echo "  4. Run: ./diagnose-endpoint.sh $LOCATION_ID <paste_token_here>"
+echo "  4. Run: ./diagnose-endpoint.sh $LOCATION_ID <paste_token_here> $PORT"
