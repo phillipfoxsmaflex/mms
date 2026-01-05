@@ -238,7 +238,11 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
 
   const fetchUnmappedAssets = async () => {
     try {
-      const response = await axios.get(`/locations/${locationId}/assets/unmapped`);
+      const requestUrl = `/locations/${locationId}/assets/unmapped`;
+      console.log('Fetching unmapped assets from:', requestUrl);
+      console.log('LocationId:', locationId);
+      const response = await axios.get(requestUrl);
+      console.log('Successfully fetched unmapped assets:', response.data);
       setUnmappedAssets(response.data);
     } catch (error: any) {
       console.error('Failed to fetch unmapped assets:', error);
@@ -247,7 +251,9 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
         status: error.response?.status,
         statusText: error.response?.statusText,
         message: errorMessage,
-        data: error.response?.data
+        data: error.response?.data,
+        fullUrl: error.config?.url,
+        baseURL: error.config?.baseURL
       });
       showSnackBar(`Failed to load unmapped assets: ${errorMessage}`, 'error');
     }
