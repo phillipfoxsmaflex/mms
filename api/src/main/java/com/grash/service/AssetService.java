@@ -440,10 +440,6 @@ public class AssetService {
         return workOrderService.getAllCost(workOrders, includeLaborCost);
     }
 
-    public Collection<Asset> findByLocationAndFloorPlanIsNull(Long locationId) {
-        return assetRepository.findByLocation_IdAndFloorPlanIsNull(locationId);
-    }
-
     @Transactional
     public Asset updatePosition(Long id, AssetPositionDTO positionDTO) {
         Optional<Asset> optionalAsset = findById(id);

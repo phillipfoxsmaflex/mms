@@ -14,9 +14,6 @@ import {
   Button,
   Switch,
   FormControlLabel,
-  List,
-  ListItem,
-  ListItemText,
   Alert,
   Tooltip,
   Tab,
@@ -38,8 +35,6 @@ import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
-import ViewListIcon from '@mui/icons-material/ViewList';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { useNavigate } from 'react-router-dom';
 import { AssetDTO, AssetStatus } from '../../../models/owns/asset';
 import WorkOrder from '../../../models/owns/workOrder';
@@ -119,7 +114,7 @@ function DraggableMarker({ position, asset, icon, isDraggable, onDragEnd, onClic
 }
 
 // Create custom icon with MUI components
-const createCustomIcon = (status: AssetStatus, theme: any) => {
+const createCustomIcon = (status: AssetStatus, theme: any, needsPositioning: boolean = false) => {
   const getIconComponent = () => {
     switch (status) {
       case 'OPERATIONAL':
@@ -139,7 +134,13 @@ const createCustomIcon = (status: AssetStatus, theme: any) => {
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
-      filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))'
+      filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))',
+      // Visual indicator for unpositioned assets
+      border: needsPositioning ? `3px solid ${theme.palette.warning.main}` : 'none',
+      borderRadius: '50%',
+      padding: needsPositioning ? '2px' : '0',
+      backgroundColor: needsPositioning ? 'rgba(255, 152, 0, 0.2)' : 'transparent',
+      animation: needsPositioning ? 'pulse 2s infinite' : 'none'
     }}>
       {getIconComponent()}
     </div>
@@ -148,8 +149,8 @@ const createCustomIcon = (status: AssetStatus, theme: any) => {
   return L.divIcon({
     html: iconHtml,
     className: 'custom-marker-icon',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
+    iconSize: needsPositioning ? [40, 40] : [32, 32],
+    iconAnchor: needsPositioning ? [20, 40] : [16, 32],
     popupAnchor: [0, -32]
   });
 };
@@ -200,7 +201,6 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [unmappedAssets, setUnmappedAssets] = useState<AssetDTO[]>([]);
   const [pendingPositions, setPendingPositions] = useState<Map<number, [number, number]>>(new Map());
   const [saving, setSaving] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
@@ -229,62 +229,13 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     }
   }, [floorPlans]);
 
-  // Fetch unmapped assets when entering edit mode
-  useEffect(() => {
-    console.log('=== useEffect triggered ===');
-    console.log('editMode:', editMode);
-    console.log('selectedFloorPlan:', selectedFloorPlan);
-    console.log('locationId:', locationId);
-    console.log('locationId type:', typeof locationId);
-    
-    if (editMode && selectedFloorPlan && locationId) {
-      console.log('✅ Conditions met, calling fetchUnmappedAssets()');
-      fetchUnmappedAssets();
-    } else {
-      console.log('❌ Conditions NOT met, skipping fetchUnmappedAssets()');
-    }
-  }, [editMode, selectedFloorPlan, locationId]);
-
-  const fetchUnmappedAssets = async () => {
-    try {
-      const requestUrl = `/locations/${locationId}/assets/unmapped`;
-      console.log('=== FETCHING UNMAPPED ASSETS ===');
-      console.log('RequestUrl:', requestUrl);
-      console.log('LocationId:', locationId);
-      console.log('LocationId type:', typeof locationId);
-      console.log('Axios defaults baseURL:', axios.defaults.baseURL);
-      console.log('Full computed URL:', `${axios.defaults.baseURL}${requestUrl}`);
-      
-      const response = await axios.get(requestUrl);
-      console.log('✅ Successfully fetched unmapped assets');
-      console.log('Response status:', response.status);
-      console.log('Response data count:', response.data?.length);
-      console.log('Response data:', response.data);
-      setUnmappedAssets(response.data);
-    } catch (error: any) {
-      console.error('❌ Failed to fetch unmapped assets:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-      console.error('=== ERROR DETAILS ===');
-      console.error('Status:', error.response?.status);
-      console.error('StatusText:', error.response?.statusText);
-      console.error('Message:', errorMessage);
-      console.error('Data:', error.response?.data);
-      console.error('Request URL:', error.config?.url);
-      console.error('Request baseURL:', error.config?.baseURL);
-      console.error('Full URL:', error.config?.baseURL + error.config?.url);
-      console.error('Request method:', error.config?.method);
-      console.error('Request headers:', error.config?.headers);
-      showSnackBar(`Failed to load unmapped assets: ${errorMessage}`, 'error');
-    }
-  };
-
   const handleDragEnd = (assetId: number, position: [number, number]) => {
     setPendingPositions(prev => new Map(prev).set(assetId, position));
   };
 
   const handleSavePositions = async () => {
-    if (pendingPositions.size === 0 && unmappedAssets.length === 0) {
-      showSnackBar('No changes to save', 'success');
+    if (pendingPositions.size === 0) {
+      showSnackBar('No changes to save', 'info');
       return;
     }
 
@@ -294,7 +245,8 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
 
     try {
       const updates = Array.from(pendingPositions.entries()).map(async ([assetId, [y, x]]) => {
-        await axios.patch(`/assets/${assetId}/position`, {
+        // Use standard asset PATCH endpoint with positionX, positionY, floorPlanId
+        await axios.patch(`/assets/${assetId}`, {
           floorPlanId: selectedFloorPlan.id,
           positionX: x / imageWidth,
           positionY: y / imageHeight
@@ -308,7 +260,6 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
       
       // Refresh data
       dispatch(getAssetsByLocation(locationId));
-      fetchUnmappedAssets();
       setEditMode(false);
     } catch (error) {
       console.error('Failed to save positions:', error);
@@ -318,23 +269,54 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     }
   };
 
+  /**
+   * Get asset position - with direct placement support
+   * - If asset has floorPlan AND position: use actual position
+   * - If asset has floorPlan but NO position (new/unmapped): use default position
+   * - If asset has NO floorPlan: return null (not for this floor plan)
+   */
   const getAssetPosition = (asset: AssetDTO): [number, number] | null => {
-    if (!selectedFloorPlan || !asset.floorPlan || asset.floorPlan.id !== selectedFloorPlan.id) {
-      return null;
+    const imageWidth = selectedFloorPlan?.imageWidth || 1000;
+    const imageHeight = selectedFloorPlan?.imageHeight || 800;
+    
+    // If asset is already mapped to THIS floor plan with coordinates
+    if (selectedFloorPlan && asset.floorPlan?.id === selectedFloorPlan.id) {
+      if (asset.positionX !== null && asset.positionX !== undefined && 
+          asset.positionY !== null && asset.positionY !== undefined) {
+        // Has position: use it
+        return [asset.positionY * imageHeight, asset.positionX * imageWidth];
+      } else {
+        // Mapped to this floor plan but no position yet: use default position (top-left)
+        return [50, 50];
+      }
     }
     
-    const imageWidth = selectedFloorPlan.imageWidth || 1000;
-    const imageHeight = selectedFloorPlan.imageHeight || 800;
-    
-    if (asset.positionX !== null && asset.positionX !== undefined && 
-        asset.positionY !== null && asset.positionY !== undefined) {
-      return [asset.positionY * imageHeight, asset.positionX * imageWidth];
+    // In Edit Mode: Show ALL location assets without a floor plan at default position
+    if (editMode && selectedFloorPlan && !asset.floorPlan) {
+      return [50, 50];
     }
     
     return null;
   };
 
-  const getMappedAssets = () => {
+  /**
+   * Check if asset needs positioning (has no valid coordinates)
+   */
+  const isUnpositionedAsset = (asset: AssetDTO): boolean => {
+    return (
+      asset.positionX === null || 
+      asset.positionX === undefined || 
+      asset.positionY === null || 
+      asset.positionY === undefined
+    );
+  };
+
+  /**
+   * Get all assets that should be displayed on the current floor plan
+   */
+  const getDisplayedAssets = () => {
+    if (!selectedFloorPlan) return [];
+    
     return locationAssets.filter(asset => {
       const position = getAssetPosition(asset);
       return position !== null;
@@ -555,7 +537,7 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     return [...floorPlans].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   }, [floorPlans]);
 
-  const mappedAssets = getMappedAssets();
+  const displayedAssets = getDisplayedAssets();
 
   return (
     <Box display="flex" gap={2}>
@@ -656,17 +638,20 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                       bounds={imageBounds}
                     />
                     
-                    {/* Mapped Asset Markers with Drag Support */}
-                    {mappedAssets.map((asset) => {
+                    {/* Asset Markers with Drag Support (Direct Placement Model) */}
+                    {displayedAssets.map((asset) => {
                       const position = getAssetPosition(asset);
                       if (!position) return null;
+                      
+                      // Check if this asset needs positioning (unplaced)
+                      const needsPositioning = isUnpositionedAsset(asset) || !asset.floorPlan;
                       
                       return (
                         <DraggableMarker
                           key={`asset-${asset.id}`}
                           position={position}
                           asset={asset}
-                          icon={createCustomIcon(asset.status, theme)}
+                          icon={createCustomIcon(asset.status, theme, needsPositioning)}
                           isDraggable={editMode}
                           onDragEnd={handleDragEnd}
                           onClick={handleAssetClick}
@@ -709,11 +694,21 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                 <Box mt={2}>
                   <Typography variant="caption" color="text.secondary">
                     {editMode 
-                      ? 'Drag markers to reposition assets. Click Save to persist changes.' 
+                      ? 'Drag markers to reposition assets. Assets with orange borders need positioning. Click Save to persist changes.' 
                       : 'Click on markers to view details. Use mouse wheel to zoom and drag to pan.'
                     }
                   </Typography>
                 </Box>
+                
+                {/* Edit Mode Info */}
+                {editMode && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    <Typography variant="caption">
+                      <strong>Direct Placement Mode:</strong> All location assets without a position appear at the top-left 
+                      with an orange border. Simply drag them to their correct position on the floor plan and click Save.
+                    </Typography>
+                  </Alert>
+                )}
                 
                 {/* Legend */}
                 <Box mt={2} display="flex" gap={2} flexWrap="wrap">
@@ -739,62 +734,6 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
           </CardContent>
         </Card>
       </Box>
-
-      {/* Unmapped Assets Sidebar (only in edit mode) */}
-      {editMode && selectedFloorPlan && (
-        <Card sx={{ width: 300, flexShrink: 0 }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <ViewListIcon />
-              <Typography variant="h6">Unmapped Assets</Typography>
-            </Box>
-            
-            {unmappedAssets.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" align="center" py={4}>
-                All assets are mapped to floor plans
-              </Typography>
-            ) : (
-              <>
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                  Drag assets from this list onto the floor plan to position them
-                </Typography>
-                <List dense>
-                  {unmappedAssets.map((asset) => (
-                    <ListItem
-                      key={asset.id}
-                      sx={{
-                        border: 1,
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        mb: 1,
-                        cursor: 'grab',
-                        '&:hover': {
-                          bgcolor: 'action.hover'
-                        }
-                      }}
-                    >
-                      <DragIndicatorIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                      <ListItemText
-                        primary={asset.name}
-                        secondary={asset.status}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                        secondaryTypographyProps={{ variant: 'caption' }}
-                      />
-                      <Chip size="small" label={createCustomIcon(asset.status, theme)} />
-                    </ListItem>
-                  ))}
-                </List>
-                <Alert severity="warning" sx={{ mt: 2 }}>
-                  <Typography variant="caption">
-                    Note: Drag & drop from sidebar will be implemented in a future update. 
-                    For now, use the API to assign assets to floor plans.
-                  </Typography>
-                </Alert>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
       
       {/* Drawer for detailed information */}
       <Drawer

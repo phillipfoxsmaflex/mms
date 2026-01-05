@@ -124,34 +124,6 @@ public class LocationController {
         return locationService.findByCompany(location.getCompany().getId()).stream().map(locationMapper::toMiniDto).collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}/assets/unmapped")
-    @PreAuthorize("permitAll()")
-    @ApiResponses(value = {//
-            @ApiResponse(code = 500, message = "Something went wrong"),
-            @ApiResponse(code = 403, message = "Access denied"),
-            @ApiResponse(code = 404, message = "Location not found")})
-    public Collection<AssetShowDTO> getUnmappedAssets(@ApiParam("id") @PathVariable("id") Long id,
-                                                       HttpServletRequest req) {
-        OwnUser user = userService.whoami(req);
-        Optional<Location> optionalLocation = locationService.findById(id);
-        if (optionalLocation.isPresent()) {
-            Location savedLocation = optionalLocation.get();
-            if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
-                if (user.getRole().getViewPermissions().contains(PermissionEntity.ASSETS)) {
-                    boolean canViewOthers = user.getRole().getViewOtherPermissions().contains(PermissionEntity.ASSETS);
-                    return assetService.findByLocationAndFloorPlanIsNull(id).stream()
-                            .filter(asset -> canViewOthers || asset.getCreatedBy().equals(user.getId()))
-                            .map(asset -> assetMapper.toShowDto(asset, assetService))
-                            .collect(Collectors.toList());
-                } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
-            } else {
-                return assetService.findByLocationAndFloorPlanIsNull(id).stream()
-                        .map(asset -> assetMapper.toShowDto(asset, assetService))
-                        .collect(Collectors.toList());
-            }
-        } else throw new CustomException("Location not found", HttpStatus.NOT_FOUND);
-    }
-
     @GetMapping("/{id}")
     @PreAuthorize("permitAll()")
     @ApiResponses(value = {//
