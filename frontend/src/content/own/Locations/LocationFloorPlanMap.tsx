@@ -591,8 +591,8 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
       {/* Main Floor Plan Area */}
       <Box flex={1}>
         <Card>
-          <CardContent>
-            {/* Header with Edit Mode Toggle */}
+          {/* Header with Edit Mode Toggle - Keep normal padding */}
+          <CardContent sx={{ pb: 0 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h5">Floor Plan</Typography>
               <Stack direction="row" spacing={2} alignItems="center">
@@ -652,22 +652,30 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
             )}
             
             {selectedFloorPlan && (
-              <Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6">
-                    {selectedFloorPlan.name}
-                    {selectedFloorPlan.area && (
-                      <Typography component="span" variant="body2" color="text.secondary" ml={1}>
-                        ({selectedFloorPlan.area} m²)
-                      </Typography>
-                    )}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {mappedAssets.length} assets mapped
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ height: 600, width: '100%', position: 'relative' }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6">
+                  {selectedFloorPlan.name}
+                  {selectedFloorPlan.area && (
+                    <Typography component="span" variant="body2" color="text.secondary" ml={1}>
+                      ({selectedFloorPlan.area} m²)
+                    </Typography>
+                  )}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {mappedAssets.length} assets mapped
+                </Typography>
+              </Box>
+            )}
+          </CardContent>
+
+          {/* Map Container - Full width without padding for maximum space */}
+          {selectedFloorPlan && (
+            <Box sx={{ 
+              height: 'calc(100vh - 280px)', 
+              minHeight: 700,
+              width: '100%', 
+              position: 'relative' 
+            }}>
                   {!loadedImageDimensions ? (
                     <Box 
                       display="flex" 
@@ -685,8 +693,8 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                       crs={L.CRS.Simple}
                       style={{ height: '100%', width: '100%', background: '#f5f5f5' }}
                       scrollWheelZoom={true}
-                      minZoom={-2}
-                      maxZoom={2}
+                      minZoom={-3}
+                      maxZoom={3}
                       key={`map-${selectedFloorPlan.id}-${loadedImageDimensions.width}-${loadedImageDimensions.height}`}
                     >
                       <MapBoundsHandler bounds={imageBounds} />
@@ -748,49 +756,50 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                     })}
                   </MapContainer>
                   )}
-                </Box>
-                
-                <Box mt={2}>
-                  <Typography variant="caption" color="text.secondary">
-                    {editMode 
-                      ? 'Drag markers to reposition assets. Assets with orange borders need positioning. Click Save to persist changes.' 
-                      : 'Click on markers to view details. Use mouse wheel to zoom and drag to pan.'
-                    }
+            </Box>
+          )}
+          
+          {/* Instructions Footer */}
+          {selectedFloorPlan && (
+            <CardContent sx={{ pt: 1, pb: 2 }}>
+              <Typography variant="caption" color="text.secondary">
+                {editMode 
+                  ? 'Drag markers to reposition assets. Assets with orange borders need positioning. Click Save to persist changes.' 
+                  : 'Click on markers to view details. Use mouse wheel to zoom and drag to pan.'
+                }
+              </Typography>
+              
+              {/* Edit Mode Info */}
+              {editMode && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="caption">
+                    <strong>Direct Placement Mode:</strong> All location assets without a position appear at the top-left 
+                    with an orange border. Simply drag them to their correct position on the floor plan and click Save.
                   </Typography>
+                </Alert>
+              )}
+              
+              {/* Legend */}
+              <Box mt={2} display="flex" gap={2} flexWrap="wrap">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CheckCircleIcon style={{ color: theme.palette.success.main, fontSize: 20 }} />
+                  <Typography variant="caption">Operational</Typography>
                 </Box>
-                
-                {/* Edit Mode Info */}
-                {editMode && (
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    <Typography variant="caption">
-                      <strong>Direct Placement Mode:</strong> All location assets without a position appear at the top-left 
-                      with an orange border. Simply drag them to their correct position on the floor plan and click Save.
-                    </Typography>
-                  </Alert>
-                )}
-                
-                {/* Legend */}
-                <Box mt={2} display="flex" gap={2} flexWrap="wrap">
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <CheckCircleIcon style={{ color: theme.palette.success.main, fontSize: 20 }} />
-                    <Typography variant="caption">Operational</Typography>
-                  </Box>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <ErrorIcon style={{ color: theme.palette.error.main, fontSize: 20 }} />
-                    <Typography variant="caption">Down/Emergency</Typography>
-                  </Box>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <WarningIcon style={{ color: theme.palette.warning.main, fontSize: 20 }} />
-                    <Typography variant="caption">Inspection Scheduled</Typography>
-                  </Box>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <BuildIcon style={{ color: theme.palette.primary.main, fontSize: 20 }} />
-                    <Typography variant="caption">Other / Work Order</Typography>
-                  </Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <ErrorIcon style={{ color: theme.palette.error.main, fontSize: 20 }} />
+                  <Typography variant="caption">Down/Emergency</Typography>
+                </Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <WarningIcon style={{ color: theme.palette.warning.main, fontSize: 20 }} />
+                  <Typography variant="caption">Inspection Scheduled</Typography>
+                </Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <BuildIcon style={{ color: theme.palette.primary.main, fontSize: 20 }} />
+                  <Typography variant="caption">Other / Work Order</Typography>
                 </Box>
               </Box>
-            )}
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
       </Box>
       
