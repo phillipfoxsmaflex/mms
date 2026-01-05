@@ -75,8 +75,9 @@ if [ -n "$ACCESS_TOKEN" ]; then
         -H "Authorization: Bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json")
     
-    BODY=$(echo "$FULL_RESPONSE" | head -n -1)
-    STATUS=$(echo "$FULL_RESPONSE" | tail -n 1)
+    # macOS-compatible way to split response
+    STATUS=$(echo "$FULL_RESPONSE" | tail -1)
+    BODY=$(echo "$FULL_RESPONSE" | sed '$d')
     
     case $STATUS in
         200)
