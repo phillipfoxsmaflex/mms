@@ -231,30 +231,49 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
 
   // Fetch unmapped assets when entering edit mode
   useEffect(() => {
-    if (editMode && selectedFloorPlan) {
+    console.log('=== useEffect triggered ===');
+    console.log('editMode:', editMode);
+    console.log('selectedFloorPlan:', selectedFloorPlan);
+    console.log('locationId:', locationId);
+    console.log('locationId type:', typeof locationId);
+    
+    if (editMode && selectedFloorPlan && locationId) {
+      console.log('✅ Conditions met, calling fetchUnmappedAssets()');
       fetchUnmappedAssets();
+    } else {
+      console.log('❌ Conditions NOT met, skipping fetchUnmappedAssets()');
     }
   }, [editMode, selectedFloorPlan, locationId]);
 
   const fetchUnmappedAssets = async () => {
     try {
       const requestUrl = `/locations/${locationId}/assets/unmapped`;
-      console.log('Fetching unmapped assets from:', requestUrl);
+      console.log('=== FETCHING UNMAPPED ASSETS ===');
+      console.log('RequestUrl:', requestUrl);
       console.log('LocationId:', locationId);
+      console.log('LocationId type:', typeof locationId);
+      console.log('Axios defaults baseURL:', axios.defaults.baseURL);
+      console.log('Full computed URL:', `${axios.defaults.baseURL}${requestUrl}`);
+      
       const response = await axios.get(requestUrl);
-      console.log('Successfully fetched unmapped assets:', response.data);
+      console.log('✅ Successfully fetched unmapped assets');
+      console.log('Response status:', response.status);
+      console.log('Response data count:', response.data?.length);
+      console.log('Response data:', response.data);
       setUnmappedAssets(response.data);
     } catch (error: any) {
-      console.error('Failed to fetch unmapped assets:', error);
+      console.error('❌ Failed to fetch unmapped assets:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-      console.error('Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        message: errorMessage,
-        data: error.response?.data,
-        fullUrl: error.config?.url,
-        baseURL: error.config?.baseURL
-      });
+      console.error('=== ERROR DETAILS ===');
+      console.error('Status:', error.response?.status);
+      console.error('StatusText:', error.response?.statusText);
+      console.error('Message:', errorMessage);
+      console.error('Data:', error.response?.data);
+      console.error('Request URL:', error.config?.url);
+      console.error('Request baseURL:', error.config?.baseURL);
+      console.error('Full URL:', error.config?.baseURL + error.config?.url);
+      console.error('Request method:', error.config?.method);
+      console.error('Request headers:', error.config?.headers);
       showSnackBar(`Failed to load unmapped assets: ${errorMessage}`, 'error');
     }
   };
