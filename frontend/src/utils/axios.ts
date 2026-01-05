@@ -20,10 +20,21 @@ axiosInt.interceptors.request.use(
 
 axiosInt.interceptors.response.use(
   (response) => response,
-  (error) =>
-    Promise.reject(
-      (error.response && error.response.data) || 'There is an error!'
-    )
+  (error) => {
+    // Enhanced error logging
+    console.error('Axios Response Error:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      }
+    });
+    return Promise.reject(error);
+  }
 );
 
 export const mock = new AxiosMockAdapter(axiosInt, { delayResponse: 0 });

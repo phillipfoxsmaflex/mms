@@ -138,6 +138,12 @@ public class NotificationService {
             }
         }
 
+        // If no tickets were received, skip further processing
+        if (allTickets.isEmpty()) {
+            System.out.println("No push notification tickets received. Skipping ticket processing.");
+            return;
+        }
+
         List<ExpoPushMessageTicketPair<ExpoPushMessage>> zippedMessagesTickets =
                 client.zipMessagesTickets(expoPushMessages, allTickets);
 
