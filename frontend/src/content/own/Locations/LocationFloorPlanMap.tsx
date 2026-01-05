@@ -204,6 +204,7 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
   const [pendingPositions, setPendingPositions] = useState<Map<number, [number, number]>>(new Map());
   const [saving, setSaving] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
+  const [loadedImageDimensions, setLoadedImageDimensions] = useState<{ width: number; height: number } | null>(null);
   
   const { assetsByLocation, loadingGet: loadingAssets } = useSelector((state) => state.assets);
   const { workOrdersByLocation, loadingGet: loadingWorkOrders } = useSelector((state) => state.workOrders);
@@ -229,6 +230,49 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     }
   }, [floorPlans]);
 
+  // Load image dimensions dynamically when floor plan changes
+  useEffect(() => {
+    if (!selectedFloorPlan?.image?.url) {
+      setLoadedImageDimensions(null);
+      return;
+    }
+
+    // If dimensions are already stored in DB, use them
+    if (selectedFloorPlan.imageWidth && selectedFloorPlan.imageHeight) {
+      setLoadedImageDimensions({
+        width: selectedFloorPlan.imageWidth,
+        height: selectedFloorPlan.imageHeight
+      });
+      return;
+    }
+
+    // Otherwise, load image and extract natural dimensions
+    const img = new Image();
+    img.onload = () => {
+      const dimensions = {
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      };
+      setLoadedImageDimensions(dimensions);
+
+      // Optional: Save dimensions to backend for future use
+      if (selectedFloorPlan.id) {
+        axios.patch(`/floor-plans/${selectedFloorPlan.id}`, {
+          imageWidth: dimensions.width,
+          imageHeight: dimensions.height
+        }).catch(err => {
+          console.warn('Failed to save image dimensions:', err);
+        });
+      }
+    };
+    img.onerror = () => {
+      console.error('Failed to load floor plan image');
+      // Fallback to default dimensions
+      setLoadedImageDimensions({ width: 1000, height: 800 });
+    };
+    img.src = selectedFloorPlan.image.url;
+  }, [selectedFloorPlan]);
+
   const handleDragEnd = (assetId: number, position: [number, number]) => {
     setPendingPositions(prev => new Map(prev).set(assetId, position));
   };
@@ -240,8 +284,9 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     }
 
     setSaving(true);
-    const imageWidth = selectedFloorPlan?.imageWidth || 1000;
-    const imageHeight = selectedFloorPlan?.imageHeight || 800;
+    // Use loaded dimensions if available, fallback to DB values, then defaults
+    const imageWidth = loadedImageDimensions?.width || selectedFloorPlan?.imageWidth || 1000;
+    const imageHeight = loadedImageDimensions?.height || selectedFloorPlan?.imageHeight || 800;
 
     try {
       const updates = Array.from(pendingPositions.entries()).map(async ([assetId, [y, x]]) => {
@@ -276,8 +321,9 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
    * - If asset has NO floorPlan: return null (not for this floor plan)
    */
   const getAssetPosition = (asset: AssetDTO): [number, number] | null => {
-    const imageWidth = selectedFloorPlan?.imageWidth || 1000;
-    const imageHeight = selectedFloorPlan?.imageHeight || 800;
+    // Use loaded dimensions if available, fallback to DB values, then defaults
+    const imageWidth = loadedImageDimensions?.width || selectedFloorPlan?.imageWidth || 1000;
+    const imageHeight = loadedImageDimensions?.height || selectedFloorPlan?.imageHeight || 800;
     
     // If asset is already mapped to THIS floor plan with coordinates
     if (selectedFloorPlan && asset.floorPlan?.id === selectedFloorPlan.id) {
@@ -353,12 +399,13 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     setSelectedFloorPlan(sortedFloorPlans[newValue]);
   };
 
-  // Use floor plan dimensions or default
-  const imageWidth = selectedFloorPlan?.imageWidth || 1000;
-  const imageHeight = selectedFloorPlan?.imageHeight || 800;
+  // Use dynamically loaded dimensions, fallback to DB values, then defaults
+  const imageWidth = loadedImageDimensions?.width || selectedFloorPlan?.imageWidth || 1000;
+  const imageHeight = loadedImageDimensions?.height || selectedFloorPlan?.imageHeight || 800;
   const floorPlanImage = selectedFloorPlan?.image?.url || 
     `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iJHtpbWFnZVdpZHRofSIgaGVpZ2h0PSIke2ltYWdlSGVpZ2h0fSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iJHtpbWFnZVdpZHRofSIgaGVpZ2h0PSIke2ltYWdlSGVpZ2h0fSIgZmlsbD0iI2Y1ZjVmNSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5GbG9vciBQbGFuIFBsYWNlaG9sZGVyPC90ZXh0Pgo8L3N2Zz4=`;
 
+  // Bounds based on actual image dimensions (1:1 pixel mapping)
   const imageBounds: L.LatLngBoundsExpression = [[0, 0], [imageHeight, imageWidth]];
 
   const renderDrawerContent = () => {
@@ -621,17 +668,28 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                 </Box>
                 
                 <Box sx={{ height: 600, width: '100%', position: 'relative' }}>
-                  <MapContainer
-                    center={[imageHeight / 2, imageWidth / 2]}
-                    zoom={0}
-                    crs={L.CRS.Simple}
-                    style={{ height: '100%', width: '100%', background: '#f5f5f5' }}
-                    scrollWheelZoom={true}
-                    minZoom={-2}
-                    maxZoom={2}
-                    key={`map-${selectedFloorPlan.id}`}
-                  >
-                    <MapBoundsHandler bounds={imageBounds} />
+                  {!loadedImageDimensions ? (
+                    <Box 
+                      display="flex" 
+                      alignItems="center" 
+                      justifyContent="center" 
+                      height="100%" 
+                      bgcolor="#f5f5f5"
+                    >
+                      <CircularProgress />
+                    </Box>
+                  ) : (
+                    <MapContainer
+                      center={[imageHeight / 2, imageWidth / 2]}
+                      zoom={0}
+                      crs={L.CRS.Simple}
+                      style={{ height: '100%', width: '100%', background: '#f5f5f5' }}
+                      scrollWheelZoom={true}
+                      minZoom={-2}
+                      maxZoom={2}
+                      key={`map-${selectedFloorPlan.id}-${loadedImageDimensions.width}-${loadedImageDimensions.height}`}
+                    >
+                      <MapBoundsHandler bounds={imageBounds} />
                     
                     <ImageOverlay
                       url={floorPlanImage}
@@ -689,6 +747,7 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                       );
                     })}
                   </MapContainer>
+                  )}
                 </Box>
                 
                 <Box mt={2}>
