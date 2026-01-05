@@ -13,7 +13,24 @@ Failed to fetch unmapped assets: There is an error! 4 LocationFloorPlanMap.tsx:2
 
 ### Ursachen-Analyse
 
-**1. Hauptproblem: Falsche Spring Data JPA Methoden-Benennung**
+**1. KRITISCH: Fehlende Axios BaseURL-Konfiguration** 🔥
+
+Das Axios-Instance in `utils/axios.ts` hatte **keine baseURL** konfiguriert:
+- Alle relativen URLs wie `/locations/79/assets/unmapped` führten zu "Unknown error"
+- Keine HTTP-Anfragen erreichten tatsächlich das Backend
+- Keine Authorization-Header wurden automatisch hinzugefügt
+
+**Browser-Fehler:**
+```javascript
+Error details: {
+  status: undefined,      // Kein HTTP-Status = Request kam nie an
+  statusText: undefined,
+  message: "Unknown error",
+  data: undefined
+}
+```
+
+**2. Falsche Spring Data JPA Methoden-Benennung**
 
 Im `AssetRepository.java` wurde die Methode falsch benannt:
 - ❌ **Falsch:** `findByLocationIdAndFloorPlanIsNull(Long locationId)`
@@ -21,14 +38,14 @@ Im `AssetRepository.java` wurde die Methode falsch benannt:
 
 Die Asset-Entity hat ein Feld namens `location` (Relation), nicht `locationId`. Spring Data JPA konnte die ursprüngliche Methode nicht korrekt parsen und generierte keine funktionierende SQL-Abfrage.
 
-**2. Fehlendes Berechtigungsmanagement**
+**3. Fehlendes Berechtigungsmanagement**
 
 Der Endpoint `GET /locations/{id}/assets/unmapped` hatte keine Berechtigungsprüfung:
 - Keine Validierung der ASSETS View-Berechtigung
 - Keine Filterung nach `createdBy` für Benutzer ohne ViewOtherPermissions
 - Potenzielle Sicherheitslücke
 
-**3. Unzureichende Fehlerbehandlung im Frontend**
+**4. Unzureichende Fehlerbehandlung im Frontend**
 
 Das Frontend zeigte nur eine generische Fehlermeldung ohne Details über:
 - HTTP-Statuscode
@@ -37,19 +54,42 @@ Das Frontend zeigte nur eine generische Fehlermeldung ohne Details über:
 
 ### Lösung
 
+**Frontend-Änderungen (KRITISCH):**
+
+1. **utils/axios.ts:** Axios BaseURL und Authentication konfiguriert 🔥
+```typescript
+import { apiUrl } from '../config';
+
+const axiosInt = axios.create({
+  baseURL: apiUrl  // ← Fehlte komplett!
+});
+
+// Request interceptor to add Authorization header
+axiosInt.interceptors.request.use(
+  (config) => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+```
+
 **Backend-Änderungen:**
 
-1. **AssetRepository.java:** Korrektur der Methoden-Benennung
+2. **AssetRepository.java:** Korrektur der Methoden-Benennung
 ```java
 Collection<Asset> findByLocation_IdAndFloorPlanIsNull(Long locationId);
 ```
 
-2. **AssetService.java:** Aktualisierung des Methodenaufrufs
+3. **AssetService.java:** Aktualisierung des Methodenaufrufs
 ```java
 return assetRepository.findByLocation_IdAndFloorPlanIsNull(locationId);
 ```
 
-3. **LocationController.java:** Hinzufügen von Berechtigungsprüfungen
+4. **LocationController.java:** Hinzufügen von Berechtigungsprüfungen
 ```java
 if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
     if (user.getRole().getViewPermissions().contains(PermissionEntity.ASSETS)) {
@@ -62,9 +102,9 @@ if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
 }
 ```
 
-**Frontend-Änderungen:**
+**Frontend-Fehlerbehandlung:**
 
-4. **LocationFloorPlanMap.tsx:** Verbesserte Fehlerbehandlung
+5. **LocationFloorPlanMap.tsx:** Verbesserte Fehlerbehandlung
 ```typescript
 catch (error: any) {
   console.error('Failed to fetch unmapped assets:', error);
@@ -104,18 +144,30 @@ docker-compose up -d
 
 ### Betroffene Dateien
 
+**Frontend:**
+- 🔥 **`frontend/src/utils/axios.ts`** (KRITISCH - BaseURL fehlte)
+- `frontend/src/content/own/Locations/LocationFloorPlanMap.tsx`
+
+**Backend:**
 - `api/src/main/java/com/grash/repository/AssetRepository.java`
 - `api/src/main/java/com/grash/service/AssetService.java`
 - `api/src/main/java/com/grash/controller/LocationController.java`
-- `frontend/src/content/own/Locations/LocationFloorPlanMap.tsx`
 
 ### Auswirkungen
 
 - ✅ **Behoben:** "Failed to load unmapped assets" Fehler
+- ✅ **Behoben:** Axios-Requests erreichen jetzt das Backend (baseURL)
+- ✅ **Behoben:** Automatische Authentication für alle axios-Calls
 - ✅ **Behoben:** Spring Data JPA Query-Generierung
 - ✅ **Verbessert:** Sicherheit durch Berechtigungsprüfung
 - ✅ **Verbessert:** Fehler-Diagnostik im Frontend
+- ⚠️ **Wichtig:** Alle axios-basierten Komponenten profitieren vom Fix
 - ✅ **Keine Regression:** Bestehende Funktionalität bleibt erhalten
+
+### Git Commits
+
+1. **e32cc8a** - Fix 'Failed to load unmapped assets' error (Backend fixes)
+2. **f4a1567** - Fix axios configuration: Add baseURL and authentication interceptor (Frontend fix - KRITISCH)
 
 ---
 
