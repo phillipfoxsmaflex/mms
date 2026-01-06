@@ -3,7 +3,7 @@ import { Zoom } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 type CustomSnackBarContext = {
-  showSnackBar: (message: string, type: 'error' | 'success') => void;
+  showSnackBar: (message: string, type: 'error' | 'success' | 'info' | 'warning') => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -13,7 +13,7 @@ export const CustomSnackBarContext = createContext<CustomSnackBarContext>(
 
 export const CustomSnackBarProvider: FC = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const showSnackBar = (message: string, type: 'error' | 'success') => {
+  const showSnackBar = (message: string, type: 'error' | 'success' | 'info' | 'warning') => {
     enqueueSnackbar(message, {
       variant: type,
       anchorOrigin: {
