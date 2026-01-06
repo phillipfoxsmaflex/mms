@@ -369,6 +369,9 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     });
   };
 
+  // Get the currently displayed assets for the selected floor plan
+  const mappedAssets = getDisplayedAssets();
+
   const handleAssetClick = (asset: AssetDTO) => {
     if (!editMode) {
       setSelectedAsset(asset);
