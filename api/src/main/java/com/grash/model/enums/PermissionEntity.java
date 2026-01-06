@@ -19,5 +19,6 @@ public enum PermissionEntity {
     ANALYTICS,
     PERMIT_LOCATIONS,
     MOC_REQUESTS,
-    DOCUMENTS
+    DOCUMENTS,
+    FLOOR_PLANS
 }

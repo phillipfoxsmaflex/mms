@@ -298,11 +298,14 @@ public class AssetController {
             @ApiResponse(code = 404, message = "Asset not found")})
     public AssetShowDTO updatePosition(@ApiParam("id") @PathVariable("id") Long id,
                                        @Valid @RequestBody AssetPositionDTO positionDTO,
-                                       @CurrentUser OwnUser user) {
+                                       HttpServletRequest req) {
+        OwnUser user = userService.whoami(req);
         Optional<Asset> optionalAsset = assetService.findById(id);
         if (optionalAsset.isPresent()) {
             Asset asset = optionalAsset.get();
-            return assetMapper.toShowDto(assetService.updatePosition(id, positionDTO), assetService);
+            if (user.getRole().getEditOtherPermissions().contains(PermissionEntity.ASSETS) || asset.getCreatedBy().equals(user.getId())) {
+                return assetMapper.toShowDto(assetService.updatePosition(id, positionDTO), assetService);
+            } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
         } else throw new CustomException("Asset not found", HttpStatus.NOT_FOUND);
     }
 

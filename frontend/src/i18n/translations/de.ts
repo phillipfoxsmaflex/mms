@@ -491,6 +491,7 @@ const deJSON = {
   useful_life: 'Nutzungsdauer',
   requests: 'Anfragen',
   locations: 'Standorte',
+  floor_plans: 'Lagepläne',
   parts_and_inventory: 'Teile/Inventar',
   purchase_orders: 'Bestellungen',
   meters: 'Zähler',
@@ -624,7 +625,6 @@ const deJSON = {
     'Füllen Sie die untenstehenden Felder aus, um den Standort zu aktualisieren',
   confirm_delete_location:
     'Sind Sie sicher, dass Sie diesen Standort löschen möchten?',
-  floor_plans: 'Grundrisse',
   floor_plan: 'Grundriss',
   floor_plan_name_description: 'Grundrissname',
   'Floor plan area in m²': 'Grundrissfläche in m²',

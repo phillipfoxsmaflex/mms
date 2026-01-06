@@ -40,9 +40,14 @@ import { AssetDTO, AssetStatus } from '../../../models/owns/asset';
 import WorkOrder from '../../../models/owns/workOrder';
 import { CustomSnackBarContext } from '../../../contexts/CustomSnackBarContext';
 import axios from '../../../utils/axios';
+import { PermissionEntity } from '../../../models/owns/role';
+import useAuth from '../../../hooks/useAuth';
 
 interface LocationFloorPlanMapProps {
   locationId: number;
+  statusFilter?: AssetStatus[];
+  workOrderFilter?: string;
+  searchText?: string;
 }
 
 // Helper component to handle map bounds resizing
@@ -114,7 +119,7 @@ function DraggableMarker({ position, asset, icon, isDraggable, onDragEnd, onClic
 }
 
 // Create custom icon with MUI components
-const createCustomIcon = (status: AssetStatus, theme: any, needsPositioning: boolean = false) => {
+const createCustomIcon = (status: AssetStatus, theme: any, needsPositioning: boolean = false, assetName: string = '') => {
   const getIconComponent = () => {
     switch (status) {
       case 'OPERATIONAL':
@@ -132,26 +137,50 @@ const createCustomIcon = (status: AssetStatus, theme: any, needsPositioning: boo
   const iconHtml = renderToStaticMarkup(
     <div style={{ 
       display: 'flex', 
+      flexDirection: 'column',
       alignItems: 'center', 
       justifyContent: 'center',
-      filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))',
-      // Visual indicator for unpositioned assets
-      border: needsPositioning ? `3px solid ${theme.palette.warning.main}` : 'none',
-      borderRadius: '50%',
-      padding: needsPositioning ? '2px' : '0',
-      backgroundColor: needsPositioning ? 'rgba(255, 152, 0, 0.2)' : 'transparent',
-      animation: needsPositioning ? 'pulse 2s infinite' : 'none'
     }}>
-      {getIconComponent()}
+      {/* Asset Name Label */}
+      {assetName && (
+        <div style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          color: '#333',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          marginBottom: '4px',
+          whiteSpace: 'nowrap',
+          boxShadow: '0px 1px 3px rgba(0,0,0,0.3)',
+          border: '1px solid rgba(0,0,0,0.1)'
+        }}>
+          {assetName}
+        </div>
+      )}
+      {/* Icon */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))',
+        border: needsPositioning ? `3px solid ${theme.palette.warning.main}` : 'none',
+        borderRadius: '50%',
+        padding: needsPositioning ? '2px' : '0',
+        backgroundColor: needsPositioning ? 'rgba(255, 152, 0, 0.2)' : 'transparent',
+        animation: needsPositioning ? 'pulse 2s infinite' : 'none'
+      }}>
+        {getIconComponent()}
+      </div>
     </div>
   );
 
   return L.divIcon({
     html: iconHtml,
     className: 'custom-marker-icon',
-    iconSize: needsPositioning ? [40, 40] : [32, 32],
-    iconAnchor: needsPositioning ? [20, 40] : [16, 32],
-    popupAnchor: [0, -32]
+    iconSize: needsPositioning ? [120, 60] : [120, 50],
+    iconAnchor: needsPositioning ? [60, 60] : [60, 50],
+    popupAnchor: [0, -50]
   });
 };
 
@@ -189,11 +218,12 @@ const createWorkOrderIcon = (priority: string, theme: any) => {
   });
 };
 
-export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMapProps) {
+export default function LocationFloorPlanMap({ locationId, statusFilter = [], workOrderFilter = '', searchText = '' }: LocationFloorPlanMapProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
   const { showSnackBar } = useContext(CustomSnackBarContext);
+  const { hasEditPermission } = useAuth();
   
   // State
   const [selectedFloorPlan, setSelectedFloorPlan] = useState<any>(null);
@@ -256,13 +286,32 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
       setLoadedImageDimensions(dimensions);
 
       // Optional: Save dimensions to backend for future use
-      if (selectedFloorPlan.id) {
+      if (selectedFloorPlan?.id && typeof selectedFloorPlan.id === 'number') {
+        console.log('Saving floor plan dimensions for ID:', selectedFloorPlan.id, dimensions);
+        console.log('Selected floor plan:', selectedFloorPlan);
         axios.patch(`/floor-plans/${selectedFloorPlan.id}`, {
           imageWidth: dimensions.width,
           imageHeight: dimensions.height
+        }).then(() => {
+          console.log('Successfully saved floor plan dimensions');
         }).catch(err => {
-          console.warn('Failed to save image dimensions:', err);
+          console.error('Failed to save image dimensions for floor plan ID:', selectedFloorPlan.id);
+          console.error('Error details:', {
+            status: err.response?.status,
+            statusText: err.response?.statusText,
+            data: err.response?.data,
+            url: err.config?.url,
+            requestData: { imageWidth: dimensions.width, imageHeight: dimensions.height }
+          });
+          
+          // If floor plan not found, refresh the floor plan data
+          if (err.response?.status === 404) {
+            console.warn('Floor plan not found in backend, refreshing floor plan data...');
+            dispatch(getFloorPlans(locationId));
+          }
         });
+      } else {
+        console.warn('Floor plan ID not found or invalid, cannot save dimensions. Floor plan:', selectedFloorPlan);
       }
     };
     img.onerror = () => {
@@ -283,19 +332,62 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
       return;
     }
 
+    if (!selectedFloorPlan?.id) {
+      console.error('Cannot save positions: No floor plan selected');
+      showSnackBar('Cannot save positions: No floor plan selected', 'error');
+      return;
+    }
+
     setSaving(true);
     // Use loaded dimensions if available, fallback to DB values, then defaults
     const imageWidth = loadedImageDimensions?.width || selectedFloorPlan?.imageWidth || 1000;
     const imageHeight = loadedImageDimensions?.height || selectedFloorPlan?.imageHeight || 800;
 
     try {
+      console.log('Saving positions for floor plan ID:', selectedFloorPlan.id);
+      console.log('Pending positions:', Array.from(pendingPositions.entries()));
+      
       const updates = Array.from(pendingPositions.entries()).map(async ([assetId, [y, x]]) => {
-        // Use standard asset PATCH endpoint with positionX, positionY, floorPlanId
-        await axios.patch(`/assets/${assetId}`, {
-          floorPlanId: selectedFloorPlan.id,
-          positionX: x / imageWidth,
-          positionY: y / imageHeight
+        // Use dedicated position PATCH endpoint with positionX, positionY, floorPlanId
+        console.log(`Updating asset ${assetId} position:`, { 
+          floorPlanId: selectedFloorPlan.id, 
+          positionX: x / imageWidth, 
+          positionY: y / imageHeight 
         });
+        
+        try {
+          const requestData = {
+            floorPlanId: selectedFloorPlan.id,
+            positionX: x / imageWidth,
+            positionY: y / imageHeight
+          };
+          console.log(`Sending PATCH request for asset ${assetId}:`, {
+            url: `/assets/${assetId}/position`,
+            data: requestData,
+            baseURL: axios.defaults.baseURL
+          });
+          
+          const response = await axios.patch(`/assets/${assetId}/position`, requestData);
+          console.log(`Successfully updated asset ${assetId} position`, response.data);
+        } catch (err) {
+          console.error(`Failed to update asset ${assetId} position:`, {
+            assetId,
+            status: err.response?.status,
+            statusText: err.response?.statusText,
+            data: err.response?.data,
+            url: err.config?.url,
+            baseURL: err.config?.baseURL,
+            fullError: err
+          });
+          
+          // If asset not found, note it but continue with other assets
+          if (err.response?.status === 404) {
+            console.warn(`Asset ${assetId} not found in backend, skipping...`);
+            // Don't throw, just log and continue
+          } else {
+            throw err;
+          }
+        }
       });
 
       await Promise.all(updates);
@@ -304,8 +396,12 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
       setPendingPositions(new Map());
       
       // Refresh data
-      dispatch(getAssetsByLocation(locationId));
-      setEditMode(false);
+      console.log('Reloading assets after save...');
+      await dispatch(getAssetsByLocation(locationId));
+      console.log('Assets reloaded, staying in edit mode temporarily');
+      
+      // Don't exit edit mode immediately - let user verify positions
+      // setEditMode(false);
     } catch (error) {
       console.error('Failed to save positions:', error);
       showSnackBar('Failed to save positions', 'error');
@@ -330,18 +426,34 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
       if (asset.positionX !== null && asset.positionX !== undefined && 
           asset.positionY !== null && asset.positionY !== undefined) {
         // Has position: use it
-        return [asset.positionY * imageHeight, asset.positionX * imageWidth];
+        const position: [number, number] = [asset.positionY * imageHeight, asset.positionX * imageWidth];
+        console.log(`Asset ${asset.id} (${asset.name}) has position:`, {
+          positionX: asset.positionX,
+          positionY: asset.positionY,
+          calculated: position,
+          imageWidth,
+          imageHeight
+        });
+        return position;
       } else {
         // Mapped to this floor plan but no position yet: use default position (top-left)
+        console.log(`Asset ${asset.id} (${asset.name}) mapped to floor plan but no position, using default`);
         return [50, 50];
       }
     }
     
     // In Edit Mode: Show ALL location assets without a floor plan at default position
     if (editMode && selectedFloorPlan && !asset.floorPlan) {
+      console.log(`Asset ${asset.id} (${asset.name}) not mapped, showing in edit mode at default position`);
       return [50, 50];
     }
     
+    console.log(`Asset ${asset.id} (${asset.name}) not displayed:`, {
+      hasFloorPlan: !!asset.floorPlan,
+      floorPlanId: asset.floorPlan?.id,
+      selectedFloorPlanId: selectedFloorPlan?.id,
+      editMode
+    });
     return null;
   };
 
@@ -365,7 +477,41 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
     
     return locationAssets.filter(asset => {
       const position = getAssetPosition(asset);
-      return position !== null;
+      if (position === null) return false;
+      
+      // Apply status filter
+      if (statusFilter.length > 0 && !statusFilter.includes(asset.status)) {
+        return false;
+      }
+      
+      // Apply search text filter
+      if (searchText && !asset.name.toLowerCase().includes(searchText.toLowerCase())) {
+        return false;
+      }
+      
+      // Apply work order filter
+      if (workOrderFilter) {
+        const assetWorkOrders = locationWorkOrders.filter(wo => wo.asset?.id === asset.id);
+        
+        if (workOrderFilter === 'with-wo' && assetWorkOrders.length === 0) {
+          return false;
+        }
+        
+        if (workOrderFilter === 'without-wo' && assetWorkOrders.length > 0) {
+          return false;
+        }
+        
+        if (workOrderFilter === 'pending') {
+          const hasPendingWO = assetWorkOrders.some(wo => 
+            wo.status === 'OPEN' || wo.status === 'IN_PROGRESS' || wo.status === 'ON_HOLD'
+          );
+          if (!hasPendingWO) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
     });
   };
 
@@ -482,7 +628,7 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                 component="button"
                 variant="h6"
                 onClick={() => {
-                  navigate(`/app/assets/${selectedAsset.id}`);
+                  navigate(`/app/assets/${selectedAsset.id}/details`);
                   closeDrawer();
                 }}
               >
@@ -598,35 +744,37 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
           <CardContent sx={{ pb: 0 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h5">Floor Plan</Typography>
-              <Stack direction="row" spacing={2} alignItems="center">
-                {editMode && pendingPositions.size > 0 && (
-                  <Chip 
-                    label={`${pendingPositions.size} unsaved changes`}
-                    color="warning"
-                    size="small"
-                  />
-                )}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={editMode}
-                      onChange={(e) => setEditMode(e.target.checked)}
-                      disabled={saving}
+              {hasEditPermission(PermissionEntity.FLOOR_PLANS, null) && (
+                <Stack direction="row" spacing={2} alignItems="center">
+                  {editMode && pendingPositions.size > 0 && (
+                    <Chip 
+                      label={`${pendingPositions.size} unsaved changes`}
+                      color="warning"
+                      size="small"
                     />
-                  }
-                  label="Edit Mode"
-                />
-                {editMode && (
-                  <Button
-                    variant="contained"
-                    startIcon={saving ? <CircularProgress size={16} /> : <SaveIcon />}
-                    onClick={handleSavePositions}
-                    disabled={saving || (pendingPositions.size === 0)}
-                  >
-                    {saving ? 'Saving...' : 'Save Positions'}
-                  </Button>
-                )}
-              </Stack>
+                  )}
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={editMode}
+                        onChange={(e) => setEditMode(e.target.checked)}
+                        disabled={saving}
+                      />
+                    }
+                    label="Edit Mode"
+                  />
+                  {editMode && (
+                    <Button
+                      variant="contained"
+                      startIcon={saving ? <CircularProgress size={16} /> : <SaveIcon />}
+                      onClick={handleSavePositions}
+                      disabled={saving || (pendingPositions.size === 0)}
+                    >
+                      {saving ? 'Saving...' : 'Save Positions'}
+                    </Button>
+                  )}
+                </Stack>
+              )}
             </Box>
 
             {editMode && (
@@ -720,7 +868,7 @@ export default function LocationFloorPlanMap({ locationId }: LocationFloorPlanMa
                           key={`asset-${asset.id}`}
                           position={position}
                           asset={asset}
-                          icon={createCustomIcon(asset.status, theme, needsPositioning)}
+                          icon={createCustomIcon(asset.status, theme, needsPositioning, asset.name)}
                           isDraggable={editMode}
                           onDragEnd={handleDragEnd}
                           onClick={handleAssetClick}

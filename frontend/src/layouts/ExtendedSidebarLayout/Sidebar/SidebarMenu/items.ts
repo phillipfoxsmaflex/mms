@@ -18,6 +18,7 @@ import CategoryTwoToneIcon from '@mui/icons-material/CategoryTwoTone';
 import AttachFileTwoToneIcon from '@mui/icons-material/AttachFileTwoTone';
 import { GroupsTwoTone, People } from '@mui/icons-material';
 import LocationOnTwoToneIcon from '@mui/icons-material/LocationOnTwoTone';
+import MapTwoToneIcon from '@mui/icons-material/MapTwoTone';
 import Inventory2TwoToneIcon from '@mui/icons-material/Inventory2TwoTone';
 import HandymanTwoToneIcon from '@mui/icons-material/HandymanTwoTone';
 import SpeedTwoToneIcon from '@mui/icons-material/SpeedTwoTone';
@@ -194,7 +195,18 @@ const ownMenuItems: MenuItems[] = [
         link: '/app/locations',
         icon: LocationOnTwoToneIcon,
         permission: PermissionEntity.LOCATIONS,
-        uiConfigKey: 'locations'
+        uiConfigKey: 'locations',
+        items: [
+          {
+            name: 'locations',
+            link: '/app/locations'
+          },
+          {
+            name: 'floor_plans',
+            link: '/app/floor-plans',
+            icon: MapTwoToneIcon
+          }
+        ]
       },
       {
         name: 'parts_and_inventory',

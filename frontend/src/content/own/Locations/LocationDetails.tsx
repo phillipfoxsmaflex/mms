@@ -350,7 +350,7 @@ export default function LocationDetails(props: LocationDetailsProps) {
         )}
         {currentTab === 'floorPlans' && (
           <Box>
-            {hasEditPermission(PermissionEntity.LOCATIONS, location) && (
+            {hasCreatePermission(PermissionEntity.FLOOR_PLANS) && (
               <Box display="flex" justifyContent="right" mb={2}>
                 <Button
                   onClick={() => setOpenAddFloorPlan(true)}
@@ -375,7 +375,7 @@ export default function LocationDetails(props: LocationDetailsProps) {
                     <ListItemButton key={floorPlan.id} divider>
                       <ListItem
                         secondaryAction={
-                          hasEditPermission(PermissionEntity.LOCATIONS, location) && (
+                          hasDeletePermission(PermissionEntity.FLOOR_PLANS, floorPlan) && (
                             <IconButton
                               sx={{ ml: 1 }}
                               onClick={() => {

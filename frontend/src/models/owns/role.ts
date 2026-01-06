@@ -34,7 +34,8 @@ export enum PermissionEntity {
   REQUESTS = 'REQUESTS',
   ANALYTICS = 'ANALYTICS',
   PERMIT_LOCATIONS = 'PERMIT_LOCATIONS',
-  MOC_REQUESTS = 'MOC_REQUESTS'
+  MOC_REQUESTS = 'MOC_REQUESTS',
+  FLOOR_PLANS = 'FLOOR_PLANS'
 }
 export type PermissionRoot =
   | 'createPermissions'

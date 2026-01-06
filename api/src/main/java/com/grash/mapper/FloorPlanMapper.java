@@ -7,8 +7,9 @@ import com.grash.model.FloorPlan;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Mappings;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring", uses = {LocationMapper.class, FileMapper.class})
+@Mapper(componentModel = "spring", uses = {LocationMapper.class, FileMapper.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface FloorPlanMapper {
     FloorPlan updateFloorPlan(@MappingTarget FloorPlan entity, FloorPlanPatchDTO dto);
 

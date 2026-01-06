@@ -72,6 +72,7 @@ const CreatePurchaseOrders = Loader(
   lazy(() => import('../content/own/PurchaseOrders/Create'))
 );
 const Locations = Loader(lazy(() => import('../content/own/Locations')));
+const FloorPlanView = Loader(lazy(() => import('../content/own/FloorPlanView')));
 const WorkOrders = Loader(lazy(() => import('../content/own/WorkOrders')));
 
 const VendorsAndCustomers = Loader(
@@ -266,6 +267,10 @@ const appRoutes = [
       { path: '', element: <Locations /> },
       { path: ':locationId', element: <Locations /> }
     ]
+  },
+  {
+    path: 'floor-plans',
+    element: <FloorPlanView />
   },
   {
     path: 'work-orders',

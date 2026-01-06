@@ -30,13 +30,15 @@ axiosInt.interceptors.response.use(
       config: {
         url: error.config?.url,
         method: error.config?.method,
-        headers: error.config?.headers
+        headers: error.config?.headers,
+        baseURL: error.config?.baseURL
       }
     });
     return Promise.reject(error);
   }
 );
 
-export const mock = new AxiosMockAdapter(axiosInt, { delayResponse: 0 });
+// Mock adapter set to passthrough mode to allow all real requests
+export const mock = new AxiosMockAdapter(axiosInt, { delayResponse: 0, onNoMatch: 'passthrough' });
 
 export default axiosInt;

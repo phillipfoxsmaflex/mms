@@ -73,6 +73,9 @@ function EditRole({ role, open, onClose, formatValues }: EditRoleProps) {
           deleteLocations: role?.deleteOtherPermissions.includes(
             PermissionEntity.LOCATIONS
           ),
+          deleteFloorPlans: role?.deleteOtherPermissions.includes(
+            PermissionEntity.FLOOR_PLANS
+          ),
           deleteAssets: role?.deleteOtherPermissions.includes(
             PermissionEntity.ASSETS
           ),
@@ -255,6 +258,12 @@ function EditRole({ role, open, onClose, formatValues }: EditRoleProps) {
                         name={'deleteLocations'}
                         control={<Checkbox checked={values.deleteLocations} />}
                         label={t('locations')}
+                      />
+                      <FormControlLabel
+                        onChange={handleChange}
+                        name={'deleteFloorPlans'}
+                        control={<Checkbox checked={values.deleteFloorPlans} />}
+                        label={t('floor_plans')}
                       />
                       <FormControlLabel
                         onChange={handleChange}
