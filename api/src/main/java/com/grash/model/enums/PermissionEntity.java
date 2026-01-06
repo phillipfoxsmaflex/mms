@@ -6,7 +6,6 @@ public enum PermissionEntity {
     CATEGORIES_WEB,
     WORK_ORDERS,
     PREVENTIVE_MAINTENANCES,
-    PERMITS,
     ASSETS,
     PARTS_AND_MULTIPARTS,
     PURCHASE_ORDERS,
@@ -17,8 +16,6 @@ public enum PermissionEntity {
     SETTINGS,
     REQUESTS,
     ANALYTICS,
-    PERMIT_LOCATIONS,
-    MOC_REQUESTS,
     DOCUMENTS,
     FLOOR_PLANS
 }

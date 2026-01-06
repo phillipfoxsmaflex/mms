@@ -173,7 +173,7 @@ function Roles() {
       ]
     ],
     [
-      'deleteFloorPlans',
+      'editFloorPlans',
       [
         {
           permissionsRoot: 'createPermissions',
@@ -182,7 +182,12 @@ function Roles() {
         {
           permissionsRoot: 'editOtherPermissions',
           permissions: [PermissionEntity.FLOOR_PLANS]
-        },
+        }
+      ]
+    ],
+    [
+      'deleteFloorPlans',
+      [
         {
           permissionsRoot: 'deleteOtherPermissions',
           permissions: [PermissionEntity.FLOOR_PLANS]

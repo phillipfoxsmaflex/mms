@@ -67,27 +67,7 @@ const ownMenuItems: MenuItems[] = [
         permission: PermissionEntity.PREVENTIVE_MAINTENANCES,
         uiConfigKey: 'preventiveMaintenance'
       },
-      {
-        name: 'permit_to_work',
-        icon: VerifiedUserTwoToneIcon,
-        link: '/app/permits',
-        permission: PermissionEntity.PERMITS,
-        uiConfigKey: 'permitToWork',
-        items: [
-          {
-            name: 'permits',
-            link: '/app/permits'
-          },
-          {
-            name: 'permit_locations',
-            link: '/app/permit-locations'
-          },
-          {
-            name: 'management_of_change',
-            link: '/app/moc'
-          }
-        ]
-      },
+
       {
         name: 'Statistics',
         icon: InsertChartTwoToneIcon,
@@ -164,25 +144,7 @@ const ownMenuItems: MenuItems[] = [
         permission: PermissionEntity.REQUESTS,
         uiConfigKey: 'requests'
       },
-      {
-        name: 'permit_to_work',
-        icon: VerifiedUserTwoToneIcon,
-        permission: PermissionEntity.PERMITS,
-        items: [
-          {
-            name: 'permits',
-            link: '/app/permits'
-          },
-          {
-            name: 'permit_locations',
-            link: '/app/permit-locations'
-          },
-          {
-            name: 'management_of_change',
-            link: '/app/moc'
-          }
-        ]
-      },
+
       {
         name: 'assets',
         link: '/app/assets',

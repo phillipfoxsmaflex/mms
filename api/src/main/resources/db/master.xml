@@ -166,8 +166,6 @@
              relativeToChangelogFile="true"/>
     <include file="changelog/2025_12_09_1765200000_add_is_demo_column.xml"
              relativeToChangelogFile="true"/>
-    <include file="changelog/2025_12_28_1735400000_create_permit_module.xml"
-             relativeToChangelogFile="true"/>
     <include file="changelog/2025_12_31_1735650000_create_document_management.xml"
              relativeToChangelogFile="true"/>
     <include file="changelog/2025_12_31_1735660000_create_interactive_maps.xml"

@@ -73,6 +73,9 @@ function EditRole({ role, open, onClose, formatValues }: EditRoleProps) {
           deleteLocations: role?.deleteOtherPermissions.includes(
             PermissionEntity.LOCATIONS
           ),
+          editFloorPlans: role?.editOtherPermissions.includes(
+            PermissionEntity.FLOOR_PLANS
+          ),
           deleteFloorPlans: role?.deleteOtherPermissions.includes(
             PermissionEntity.FLOOR_PLANS
           ),
@@ -225,6 +228,12 @@ function EditRole({ role, open, onClose, formatValues }: EditRoleProps) {
                         name={'createCategories'}
                         control={<Checkbox checked={values.createCategories} />}
                         label={t('categories')}
+                      />
+                      <FormControlLabel
+                        onChange={handleChange}
+                        name={'editFloorPlans'}
+                        control={<Checkbox checked={values.editFloorPlans} />}
+                        label={t('floor_plans')}
                       />
                     </Box>
 

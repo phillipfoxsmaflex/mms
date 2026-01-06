@@ -41,9 +41,6 @@ import { reducer as importsReducer } from 'src/slices/imports';
 import { reducer as exportsReducer } from 'src/slices/exports';
 import { reducer as workflowReducer } from 'src/slices/workflow';
 import { reducer as licenseReducer } from 'src/slices/license';
-import { reducer as permitReducer } from 'src/slices/permit';
-import { reducer as managementOfChangeReducer } from 'src/slices/managementOfChange';
-import { reducer as mocReducer } from 'src/slices/moc';
 import { reducer as documentReducer } from 'src/slices/document';
 import { reducer as locationImageReducer } from 'src/slices/locationImage';
 import { reducer as assetHotspotReducer } from 'src/slices/assetHotspot';
@@ -91,9 +88,6 @@ const rootReducer = combineReducers({
   exports: exportsReducer,
   workflows: workflowReducer,
   license: licenseReducer,
-  permits: permitReducer,
-  managementOfChange: managementOfChangeReducer,
-  moc: mocReducer,
   documents: documentReducer,
   locationImages: locationImageReducer,
   assetHotspots: assetHotspotReducer

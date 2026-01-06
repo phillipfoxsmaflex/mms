@@ -87,15 +87,7 @@ const PreventiveMaintenances = Loader(
   lazy(() => import('../content/own/PreventiveMaintenance'))
 );
 
-const PermitManagement = Loader(
-  lazy(() => import('../content/own/PermitManagement'))
-);
-const PermitLocations = Loader(
-  lazy(() => import('../content/own/PermitLocations'))
-);
-const MocManagement = Loader(
-  lazy(() => import('../content/own/ManagementOfChange'))
-);
+
 
 const PeopleAndTeams = Loader(
   lazy(() => import('../content/own/PeopleAndTeams'))
@@ -205,45 +197,7 @@ const appRoutes = [
       }
     ]
   },
-  {
-    path: 'permits',
-    children: [
-      {
-        path: '',
-        element: <PermitManagement />
-      },
-      {
-        path: ':permitId',
-        element: <PermitManagement />
-      }
-    ]
-  },
-  {
-    path: 'permit-locations',
-    children: [
-      {
-        path: '',
-        element: <PermitLocations />
-      },
-      {
-        path: ':locationId',
-        element: <PermitLocations />
-      }
-    ]
-  },
-  {
-    path: 'moc',
-    children: [
-      {
-        path: '',
-        element: <MocManagement />
-      },
-      {
-        path: ':mocId',
-        element: <MocManagement />
-      }
-    ]
-  },
+
   {
     path: 'purchase-orders',
     children: [
@@ -406,27 +360,7 @@ const appRoutes = [
   { path: 'upgrade', element: <Upgrade /> },
   { path: 'downgrade', element: <Downgrade /> },
   { path: 'switch-account', element: <SwitchAccount /> },
-  {
-    path: 'permits',
-    children: [
-      { path: '', element: <PermitManagement /> },
-      { path: ':permitId', element: <PermitManagement /> }
-    ]
-  },
-  {
-    path: 'permit-locations',
-    children: [
-      { path: '', element: <PermitLocations /> },
-      { path: ':locationId', element: <PermitLocations /> }
-    ]
-  },
-  {
-    path: 'moc',
-    children: [
-      { path: '', element: <MocManagement /> },
-      { path: ':mocId', element: <MocManagement /> }
-    ]
-  }
+
 ];
 
 export default appRoutes;

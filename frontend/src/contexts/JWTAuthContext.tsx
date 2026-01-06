@@ -904,7 +904,13 @@ export const AuthProvider: FC<AuthProviderProps> = (props) => {
     permissionEntity: PermissionEntity,
     entity: Entity
   ) => {
-    if (!entity) return false;
+    if (!entity) {
+      // For FLOOR_PLANS, allow checking edit permission without entity
+      if (permissionEntity === PermissionEntity.FLOOR_PLANS) {
+        return state.user.role.editOtherPermissions.includes(permissionEntity);
+      }
+      return false;
+    }
     if (permissionEntity === PermissionEntity.PEOPLE_AND_TEAMS) {
       return (
         state.user.id === entity.id ||
