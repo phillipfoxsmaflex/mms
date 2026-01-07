@@ -88,7 +88,6 @@
 - **Team Management** - Organize users into teams and departments
 - **Service Providers** - Manage external contractors and vendors
 - **User Activity Tracking** - Audit logs and activity monitoring
-- **SSO Integration** - Single Sign-On with OAuth2 providers
 - **Multi-Tenancy** - Support for multiple organizations
 
 ### 🔄 Workflow & Automation
@@ -103,14 +102,13 @@
 ### 📍 Location Management
 
 - **Location Hierarchy** - Organize assets by location and sub-location
-- **Google Maps Integration** - Visual location mapping
+- **Floor Plan Integration** - Visual location mapping
 - **Multi-Site Support** - Manage multiple facilities or locations
 - **Location-Based Assignment** - Assign work orders by location
 
 ### 📑 Request Management
 
 - **Service Requests** - Allow users to submit maintenance requests
-- **Request Portal** - Self-service portal for end users
 - **Request Approval** - Approval workflow for maintenance requests
 - **Request Tracking** - Track request status from submission to completion
 

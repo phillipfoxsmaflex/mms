@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useContext } from 'react';
 import frLocale from '@fullcalendar/core/locales/fr';
 import enLocale from '@fullcalendar/core/locales/en-gb';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import {
   Box,
+  Button,
   Card,
   CircularProgress,
   Divider,
@@ -22,14 +23,14 @@ import type { View } from 'src/models/calendar';
 import { useDispatch, useSelector } from 'src/store';
 import { selectEvent } from 'src/slices/calendar';
 import WorkOrder, { Priority } from 'src/models/owns/workOrder';
-import { CalendarEvent, getWorkOrderEvents } from 'src/slices/workOrder';
+import { CalendarEvent, getWorkOrderEvents, batchUpdateWorkOrderDates } from 'src/slices/workOrder';
 import Actions from './Actions';
 import i18n from 'i18next';
 import PreventiveMaintenance from 'src/models/owns/preventiveMaintenance';
 import { usePrevious } from '../../../../hooks/usePrevious';
 import { supportedLanguages } from '../../../../i18n/i18n';
 import WorkOrderDragList from './WorkOrderDragList';
-import { updateWorkOrderDates } from 'src/slices/workOrder';
+import { CustomSnackBarContext } from 'src/contexts/CustomSnackBarContext';
 
 const FullCalendarWrapper = styled(Box)(
   ({ theme }) => `
@@ -137,6 +138,7 @@ function ApplicationsCalendar({
   handleOpenDetails
 }: OwnProps) {
   const theme = useTheme();
+  const { showSnackBar } = useContext(CustomSnackBarContext);
 
   const calendarRef = useRef<FullCalendar | null>(null);
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -145,6 +147,10 @@ function ApplicationsCalendar({
   const [date, setDate] = useState<Date>(new Date());
   const [view, setView] = useState<View>('timeGridWeek');
   const getLanguage = i18n.language;
+  
+  // Batch-Update State
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const viewsOrder: View[] = [
     'dayGridMonth',
     'timeGridWeek',
@@ -193,67 +199,177 @@ function ApplicationsCalendar({
     };
   };
 
-  // Drag and Drop handlers
+  // Mark calendar as changed (for batch-update)
+  const markAsChanged = useCallback(() => {
+    console.log('Calendar marked as changed');
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Drag and Drop handlers (now local only, no backend calls)
   const handleDrop = (info: any) => {
-    // Prevent drop if dragged from outside our application
-    if (!info.draggedEl.dataset.workOrderId) {
-      return;
-    }
-
-    const workOrderId = parseInt(info.draggedEl.dataset.workOrderId);
-    const dropDate = info.date;
-    const allDay = info.allDay;
-
-    // Calculate start and end dates
-    const startDate = allDay ? dropDate : new Date(dropDate);
-    const endDate = allDay ? dropDate : new Date(dropDate);
-    endDate.setHours(endDate.getHours() + 2); // Default 2-hour duration
-
-    // Dispatch action to update work order dates
-    dispatch(updateWorkOrderDates(workOrderId, startDate, endDate));
-
-    // Refresh calendar events
-    const calItem = calendarRef.current;
-    if (calItem) {
-      const calApi = calItem.getApi();
-      const start = calApi.view.activeStart;
-      const end = calApi.view.activeEnd;
-      dispatch(getWorkOrderEvents(start, end));
-    }
+    // This handler is called when dropping without create: true
+    // We don't use it since we have create: true in Draggable config
+    console.log('handleDrop called (not used with create: true)', info);
   };
 
   const handleEventDrop = (info: any) => {
-    const eventId = parseInt(info.event.id);
-    const newStart = info.event.start;
-    const newEnd = info.event.end;
-
-    // Dispatch action to update work order dates
-    dispatch(updateWorkOrderDates(eventId, newStart, newEnd));
+    // Event was moved within the calendar - keep it local
+    console.log('Event moved locally:', {
+      id: info.event.id,
+      newStart: info.event.start,
+      newEnd: info.event.end
+    });
+    
+    // Mark as changed for batch-update
+    markAsChanged();
   };
 
   const handleEventResize = (info: any) => {
-    const eventId = parseInt(info.event.id);
-    const newStart = info.event.start;
-    const newEnd = info.event.end;
-
-    // Dispatch action to update work order dates
-    dispatch(updateWorkOrderDates(eventId, newStart, newEnd));
+    // Event was resized - keep it local
+    console.log('Event resized locally:', {
+      id: info.event.id,
+      newStart: info.event.start,
+      newEnd: info.event.end
+    });
+    
+    // Mark as changed for batch-update
+    markAsChanged();
   };
 
   const handleEventReceive = (info: any) => {
-    // This is called when an event is received from an external source
-    // We'll handle this similarly to drop
-    const workOrderId = parseInt(info.draggedEl.dataset.workOrderId);
-    const dropDate = info.event.start;
-    const allDay = info.event.allDay;
+    // Work order was dragged from list into calendar - keep it local
+    console.log('Work order received locally:', {
+      id: info.event.id,
+      title: info.event.title,
+      start: info.event.start,
+      end: info.event.end
+    });
+    
+    // Mark as changed for batch-update
+    markAsChanged();
+  };
 
-    // Calculate start and end dates
-    const startDate = allDay ? dropDate : new Date(dropDate);
-    const endDate = allDay ? dropDate : new Date(dropDate);
-    endDate.setHours(endDate.getHours() + 2); // Default 2-hour duration
+  // Save all changes to backend
+  const handleSave = async () => {
+    if (!hasUnsavedChanges || isSaving) return;
+    
+    setIsSaving(true);
+    console.log('Saving all calendar changes...');
+    
+    try {
+      const calApi = calendarRef.current?.getApi();
+      if (!calApi) {
+        throw new Error('Calendar API not available');
+      }
 
-    // Dispatch action to update work order dates
-    dispatch(updateWorkOrderDates(workOrderId, startDate, endDate));
+      // Get all events from calendar
+      const allEvents = calApi.getEvents();
+      console.log('Found', allEvents.length, 'events in calendar');
+      
+      // Log all events for debugging
+      allEvents.forEach((event, index) => {
+        console.log(`Event ${index}:`, {
+          id: event.id,
+          title: event.title,
+          start: event.start,
+          end: event.end,
+          allDay: event.allDay
+        });
+      });
+
+      // Prepare batch update with validation
+      const updates = allEvents
+        .filter(event => {
+          // Validate event has required data
+          const id = parseInt(event.id);
+          if (!event.id || isNaN(id)) {
+            console.warn('Skipping event with invalid ID:', event.id, event);
+            return false;
+          }
+          if (!event.start) {
+            console.warn('Skipping event without start date:', event);
+            return false;
+          }
+          if (!event.title) {
+            console.warn('Skipping event without title:', event);
+            return false;
+          }
+          return true;
+        })
+        .map(event => {
+          const id = parseInt(event.id);
+          const start = event.start;
+          const title = event.title;
+          
+          // Calculate end date
+          let end = event.end;
+          if (!end) {
+            // Default: 2 hours after start
+            end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+          }
+          
+          return {
+            id: id,
+            title: title,  // Backend requires this field!
+            estimatedStartDate: start.toISOString(),
+            dueDate: end.toISOString()
+          };
+        });
+
+      console.log('Batch update prepared:', updates);
+      console.log('Number of valid updates:', updates.length);
+
+      if (updates.length === 0) {
+        throw new Error('No valid events to update');
+      }
+
+      // Send batch update to backend
+      console.log('Sending batch update to backend...');
+      await dispatch(batchUpdateWorkOrderDates(updates));
+      console.log('Batch update completed successfully');
+
+      // Reload calendar events to show updated data
+      const start = calApi.view.activeStart;
+      const end = calApi.view.activeEnd;
+      console.log('Reloading calendar events...');
+      await dispatch(getWorkOrderEvents(start, end));
+
+      // Success!
+      setHasUnsavedChanges(false);
+      showSnackBar('Changes saved successfully', 'success');
+      console.log('All changes saved successfully');
+
+    } catch (error) {
+      console.error('Failed to save changes:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
+      showSnackBar('Failed to save changes. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Cancel all changes and reload from backend
+  const handleCancel = () => {
+    if (!hasUnsavedChanges) return;
+
+    if (window.confirm('Discard all unsaved changes?')) {
+      console.log('Canceling changes, reloading from backend...');
+      
+      // Reload calendar events from backend
+      const calApi = calendarRef.current?.getApi();
+      if (calApi) {
+        const start = calApi.view.activeStart;
+        const end = calApi.view.activeEnd;
+        dispatch(getWorkOrderEvents(start, end));
+      }
+
+      setHasUnsavedChanges(false);
+      showSnackBar('Changes discarded', 'info');
+    }
   };
 
   const handleDateToday = (): void => {
@@ -266,8 +382,14 @@ function ApplicationsCalendar({
       setDate(calApi.getDate());
     }
   };
+  // Load calendar events when view or date changes
   useEffect(() => {
     const calItem = calendarRef.current;
+    if (!calItem) {
+      console.log('Calendar ref not ready yet');
+      return;
+    }
+    
     const newView = calItem.getApi().view;
     if (
       previousView &&
@@ -279,17 +401,68 @@ function ApplicationsCalendar({
     }
     const start = newView.activeStart;
     const end = newView.activeEnd;
+    console.log('Loading calendar events for view:', { start, end, view });
     dispatch(getWorkOrderEvents(start, end));
-  }, [date, view]);
+  }, [date, view, dispatch, previousView]);
 
-  // Add initial load for calendar events
+  // Initial load of calendar events when component mounts
   useEffect(() => {
-    // Load initial calendar events when component mounts
+    console.log('Initial calendar load triggered');
     const now = new Date();
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + 1); // Load 1 month ahead
     dispatch(getWorkOrderEvents(now, endDate));
   }, [dispatch]);
+
+  // Warn user before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires returnValue to be set
+        return ''; // Some browsers require a return value
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Set up external drag-and-drop for FullCalendar
+  useEffect(() => {
+    // Small delay to ensure WorkOrderDragList is rendered
+    const timer = setTimeout(() => {
+      const externalContainer = document.querySelector('[data-work-order-list]') as HTMLElement;
+      
+      if (externalContainer) {
+        console.log('Initializing Draggable for WorkOrderDragList');
+        
+        new Draggable(externalContainer, {
+          itemSelector: '[data-work-order-id]',
+          eventData: function(eventEl) {
+            const workOrderId = eventEl.getAttribute('data-work-order-id');
+            const title = eventEl.querySelector('.MuiListItemText-primary')?.textContent || 'Work Order';
+            
+            console.log('Creating draggable event data:', { workOrderId, title });
+            
+            return {
+              id: workOrderId,
+              title: title,
+              duration: '02:00', // Default 2-hour duration
+              create: true // Create event on drop
+            };
+          }
+        });
+      } else {
+        console.warn('WorkOrderDragList container not found for Draggable initialization');
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const changeView = (changedView: View): void => {
     const calItem = calendarRef.current;
@@ -340,6 +513,46 @@ function ApplicationsCalendar({
           view={view}
         />
       </Box>
+      
+      {/* Save/Cancel buttons and Unsaved Changes indicator */}
+      {hasUnsavedChanges && (
+        <Box px={3} pb={2}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSave}
+              disabled={isSaving}
+              startIcon={isSaving ? <CircularProgress size={20} color="inherit" /> : null}
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </Button>
+            
+            <Button
+              variant="outlined"
+              onClick={handleCancel}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            
+            <Box
+              sx={{
+                px: 2,
+                py: 0.5,
+                borderRadius: 1,
+                bgcolor: 'warning.light',
+                color: 'warning.dark',
+                fontSize: '0.875rem',
+                fontWeight: 500
+              }}
+            >
+              Unsaved Changes
+            </Box>
+          </Stack>
+        </Box>
+      )}
+      
       <Divider />
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>

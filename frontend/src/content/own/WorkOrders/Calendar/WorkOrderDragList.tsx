@@ -17,8 +17,8 @@ import {
   Tooltip
 } from '@mui/material';
 import { useDispatch, useSelector } from 'src/store';
-import { WorkOrderBaseMiniDTO } from 'src/models/owns/workOrderBase';
-import { getWorkOrdersMini } from 'src/slices/workOrder';
+import { WorkOrderBaseMiniDTO, WorkOrderBase } from 'src/models/owns/workOrderBase';
+import { getWorkOrdersMini, getWorkOrders } from 'src/slices/workOrder';
 import { Priority } from 'src/models/owns/workOrder';
 import PriorityWrapper from '../../components/PriorityWrapper';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -28,7 +28,7 @@ const WorkOrderDragList = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const dispatch = useDispatch();
-  const { workOrdersMini, loadingGet } = useSelector((state) => state.workOrders);
+  const { workOrders, loadingGet } = useSelector((state) => state.workOrders);
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [showAll, setShowAll] = React.useState(false);
@@ -37,20 +37,19 @@ const WorkOrderDragList = () => {
     const fetchWorkOrders = async () => {
       try {
         setIsLoading(true);
-        // Fetch work orders that don't have estimatedStartDate (unplanned work orders)
-        await dispatch(getWorkOrdersMini({
+        // Fetch work orders that don't have estimatedStartDate or have default date (unplanned work orders)
+        // Default date is 01.01.1970 which has timestamp 0
+        const defaultDate = new Date('1970-01-01T00:00:00Z').toISOString();
+        
+        await dispatch(getWorkOrders({
           filterFields: [
-            {
-              field: 'estimatedStartDate',
-              operation: 'nu',
-              value: null
-            },
             {
               field: 'archived',
               operation: 'eq',
               value: false
             }
           ],
+          // We'll filter the results client-side to handle the default date case
           pageSize: 50,
           pageNum: 0
         }));
@@ -61,6 +60,11 @@ const WorkOrderDragList = () => {
 
     fetchWorkOrders();
   }, [dispatch]);
+
+  // Refresh the list when work orders are updated (e.g., after drag-and-drop)
+  React.useEffect(() => {
+    // This will trigger a re-render when workOrders change
+  }, [workOrders.content]);
 
   const getPriorityColor = (priority: Priority) => {
     switch (priority) {
@@ -79,18 +83,14 @@ const WorkOrderDragList = () => {
 
   const handleDragStart = (event: React.DragEvent<HTMLLIElement>, workOrder: WorkOrderBaseMiniDTO) => {
     event.dataTransfer.setData('text/plain', workOrder.id.toString());
+    event.dataTransfer.setData('workOrderId', workOrder.id.toString());
     event.dataTransfer.effectAllowed = 'move';
   };
 
   const handleRefresh = () => {
     setIsLoading(true);
-    dispatch(getWorkOrdersMini({
+    dispatch(getWorkOrders({
       filterFields: [
-        {
-          field: 'estimatedStartDate',
-          operation: 'nu',
-          value: null
-        },
         {
           field: 'archived',
           operation: 'eq',
@@ -106,10 +106,39 @@ const WorkOrderDragList = () => {
     setShowAll(!showAll);
   };
 
+  // Filter work orders to show only unplanned ones (no dueDate or default date)
+  const unplannedWorkOrders = workOrders.content.filter(workOrder => {
+    // Check if dueDate is null, undefined, empty, or the default date 01.01.1970
+    if (!workOrder.dueDate) {
+      console.log(`Work order ${workOrder.id} has no dueDate - included in drag list`);
+      return true;
+    }
+    
+    try {
+      const dueDate = new Date(workOrder.dueDate);
+      const defaultDate = new Date('1970-01-01T00:00:00Z');
+      
+      // Consider as unplanned if it's the default date
+      if (dueDate.getTime() === defaultDate.getTime()) {
+        console.log(`Work order ${workOrder.id} has default date 01.01.1970 - included in drag list`);
+        return true;
+      } else {
+        console.log(`Work order ${workOrder.id} has valid dueDate ${workOrder.dueDate} - excluded from drag list`);
+        return false;
+      }
+    } catch (error) {
+      // If date parsing fails, consider it as unplanned
+      console.warn('Failed to parse dueDate:', workOrder.dueDate);
+      return true;
+    }
+  });
+
+  console.log(`Total work orders: ${workOrders.content.length}, Unplanned: ${unplannedWorkOrders.length}`);
+
   // Filter work orders based on showAll setting
   const filteredWorkOrders = showAll 
-    ? workOrdersMini.content
-    : workOrdersMini.content.slice(0, 10);
+    ? unplannedWorkOrders
+    : unplannedWorkOrders.slice(0, 10);
 
   if (isLoading) {
     return (
@@ -133,7 +162,7 @@ const WorkOrderDragList = () => {
   }
 
   return (
-    <Card sx={{ p: 2, mb: 2, height: '100%', overflow: 'auto' }}>
+    <Card sx={{ p: 2, mb: 2, height: '100%', overflow: 'auto' }} data-work-order-list>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6" gutterBottom>
           {t('available_work_orders')}
@@ -143,7 +172,7 @@ const WorkOrderDragList = () => {
         </IconButton>
       </Box>
       
-      {workOrdersMini.content.length === 0 ? (
+      {unplannedWorkOrders.length === 0 ? (
         <Alert severity="info" sx={{ mb: 2 }}>
           <AlertTitle>{t('no_available_work_orders')}</AlertTitle>
           {t('all_work_orders_scheduled')}
@@ -196,11 +225,11 @@ const WorkOrderDragList = () => {
             ))}
           </List>
           
-          {workOrdersMini.content.length > 10 && (
+          {unplannedWorkOrders.length > 10 && (
             <Box mt={2} textAlign="center">
               <Tooltip title={showAll ? t('show_less') : t('show_more')}>
                 <IconButton onClick={handleToggleShowAll} size="small">
-                  {showAll ? t('show_less') : `${t('show_more')} (${workOrdersMini.content.length - 10}+)`}
+                  {showAll ? t('show_less') : `${t('show_more')} (${unplannedWorkOrders.length - 10}+)`}
                 </IconButton>
               </Tooltip>
             </Box>

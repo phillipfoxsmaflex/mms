@@ -60,7 +60,8 @@ import {
   deleteWorkOrder,
   editWorkOrder,
   getSingleWorkOrder,
-  getWorkOrders
+  getWorkOrders,
+  getWorkOrderEvents
 } from '../../../slices/workOrder';
 import { CustomSnackBarContext } from '../../../contexts/CustomSnackBarContext';
 import { useDispatch, useSelector } from '../../../store';
@@ -157,6 +158,7 @@ function WorkOrders() {
   const { locations } = useSelector((state) => state.locations);
   const { assetInfos } = useSelector((state) => state.assets);
   const [initialDueDate, setInitialDueDate] = useState<Date>(null);
+  const [initialEstimatedStartDate, setInitialEstimatedStartDate] = useState<Date>(null);
   const locationParamObject = locations.find(
     (location) => location.id === Number(locationParam)
   );
@@ -332,6 +334,16 @@ function WorkOrders() {
   const onCreationSuccess = () => {
     setOpenAddModal(false);
     showSnackBar(t('wo_create_success'), 'success');
+    
+    // Refresh calendar events to show the newly created work order
+    const now = new Date();
+    const futureDate = new Date();
+    futureDate.setMonth(futureDate.getMonth() + 1);
+    dispatch(getWorkOrderEvents(now, futureDate));
+    
+    // Reset the initial dates
+    setInitialDueDate(null);
+    setInitialEstimatedStartDate(null);
   };
   const onCreationFailure = (err) =>
     showSnackBar(t('wo_create_failure'), 'error');
@@ -708,6 +720,7 @@ function WorkOrders() {
             submitText={t('add')}
             values={{
               requiredSignature: false,
+              estimatedStartDate: initialEstimatedStartDate,
               dueDate: initialDueDate,
               asset: assetParamObject
                 ? { label: assetParamObject.name, value: assetParamObject.id }
@@ -1038,7 +1051,12 @@ function WorkOrders() {
             ) : (
               <WorkOrderCalendar
                 handleAddWorkOrder={(date: Date) => {
-                  setInitialDueDate(date);
+                  // Set both estimatedStartDate and dueDate when creating from calendar
+                  setInitialEstimatedStartDate(date);
+                  // Set dueDate to 2 hours after start by default
+                  const dueDate = new Date(date);
+                  dueDate.setHours(dueDate.getHours() + 2);
+                  setInitialDueDate(dueDate);
                   setOpenAddModal(true);
                 }}
                 handleOpenDetails={(id, type) => {

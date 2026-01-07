@@ -341,6 +341,7 @@ export const getPDFReport =
 export const getWorkOrderEvents =
   (start: Date, end: Date): AppThunk =>
   async (dispatch) => {
+    console.log('Refreshing calendar events for range:', { start, end });
     dispatch(slice.actions.setLoadingGet({ loading: true }));
     const response = await api.post<
       CalendarEvent<WorkOrder | PreventiveMaintenance>[]
@@ -348,6 +349,7 @@ export const getWorkOrderEvents =
       start,
       end
     });
+    console.log('Received calendar events:', response.length, 'events');
     dispatch(
       slice.actions.getEvents({
         events: response
@@ -374,6 +376,8 @@ export const updateWorkOrderDates =
   (id: number, startDate: Date, endDate?: Date): AppThunk =>
   async (dispatch) => {
     try {
+      console.log('Updating work order dates:', { id, startDate, endDate });
+      
       // Prepare the update data
       const updateData: any = {
         estimatedStartDate: startDate.toISOString()
@@ -382,7 +386,12 @@ export const updateWorkOrderDates =
       // Only include end date if provided
       if (endDate) {
         updateData.dueDate = endDate.toISOString();
+        console.log('Setting due date to:', endDate.toISOString());
+      } else {
+        console.log('No end date provided, due date will not be updated');
       }
+
+      console.log('Sending update request with data:', updateData);
 
       // Make the API call to update the work order
       const response = await api.patch<WorkOrder>(
@@ -390,12 +399,29 @@ export const updateWorkOrderDates =
         updateData
       );
 
+      console.log('Update response received:', {
+        id: response.id,
+        estimatedStartDate: response.estimatedStartDate,
+        dueDate: response.dueDate
+      });
+
       // Update the work order in the store
       dispatch(slice.actions.editWorkOrder({ workOrder: response }));
 
-      // Refresh calendar events to show the updated work order
-      const now = new Date();
-      dispatch(getWorkOrderEvents(now, new Date(now.setMonth(now.getMonth() + 1))));
+      // Refresh work orders list to update the drag list
+      // This ensures that work orders with assigned dates are removed from the unplanned list
+      // Note: Calendar events are refreshed by the caller based on the current view
+      dispatch(getWorkOrders({
+        filterFields: [
+          {
+            field: 'archived',
+            operation: 'eq',
+            value: false
+          }
+        ],
+        pageSize: 50,
+        pageNum: 0
+      }));
 
     } catch (error) {
       console.error('Failed to update work order dates:', error);
@@ -403,4 +429,70 @@ export const updateWorkOrderDates =
       throw error;
     }
   };
+
+// Batch update multiple work orders at once
+export const batchUpdateWorkOrderDates =
+  (updates: Array<{ id: number; title: string; estimatedStartDate: string; dueDate: string }>): AppThunk =>
+  async (dispatch) => {
+    try {
+      console.log('Batch updating work order dates:', updates.length, 'work orders');
+      console.log('Updates to send:', JSON.stringify(updates, null, 2));
+      
+      // Try to use a batch endpoint if available, otherwise fall back to individual updates
+      // Note: You may need to create a batch endpoint in the backend
+      // For now, we'll use Promise.all to update all at once
+      
+      const updatePromises = updates.map((update, index) => {
+        console.log(`Preparing update ${index + 1}/${updates.length} for WO ${update.id}`);
+        return api.patch<WorkOrder>(`${basePath}/${update.id}`, {
+          title: update.title,
+          estimatedStartDate: update.estimatedStartDate,
+          dueDate: update.dueDate
+        }).then(response => {
+          console.log(`✓ Update ${index + 1} successful for WO ${update.id}`);
+          return response;
+        }).catch(error => {
+          console.error(`✗ Update ${index + 1} failed for WO ${update.id}:`, error.response?.data || error.message);
+          throw error;
+        });
+      });
+
+      console.log('Sending', updatePromises.length, 'update requests...');
+      const responses = await Promise.all(updatePromises);
+      
+      console.log('All updates completed successfully, received', responses.length, 'responses');
+
+      // Update all work orders in the store
+      responses.forEach((response, index) => {
+        console.log(`Updating Redux store for WO ${response.id}`);
+        dispatch(slice.actions.editWorkOrder({ workOrder: response }));
+      });
+
+      // Refresh work orders list to update the drag list
+      console.log('Refreshing work orders list...');
+      dispatch(getWorkOrders({
+        filterFields: [
+          {
+            field: 'archived',
+            operation: 'eq',
+            value: false
+          }
+        ],
+        pageSize: 50,
+        pageNum: 0
+      }));
+
+      console.log('Batch update fully completed');
+
+    } catch (error) {
+      console.error('Failed to batch update work order dates:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      throw error;
+    }
+  };
+
 export default slice;
