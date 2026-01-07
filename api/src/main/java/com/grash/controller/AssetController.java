@@ -5,6 +5,7 @@ import com.grash.dto.AssetMiniDTO;
 import com.grash.dto.AssetPatchDTO;
 import com.grash.dto.AssetPositionDTO;
 import com.grash.dto.AssetShowDTO;
+import com.grash.dto.DocumentDTO;
 import com.grash.dto.SuccessResponse;
 import com.grash.exception.CustomException;
 import com.grash.mapper.AssetMapper;
@@ -18,6 +19,7 @@ import com.grash.model.enums.RoleCode;
 import com.grash.model.enums.RoleType;
 import com.grash.security.CurrentUser;
 import com.grash.service.AssetService;
+import com.grash.service.DocumentService;
 import com.grash.service.LocationService;
 import com.grash.service.PartService;
 import com.grash.service.UserService;
@@ -59,6 +61,7 @@ public class AssetController {
     private final PartService partService;
     private final MessageSource messageSource;
     private final EntityManager em;
+    private final DocumentService documentService;
 
     @PostMapping("/search")
     @PreAuthorize("permitAll()")
@@ -307,6 +310,25 @@ public class AssetController {
                 return assetMapper.toShowDto(assetService.updatePosition(id, positionDTO), assetService);
             } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
         } else throw new CustomException("Asset not found", HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/{id}/documents")
+    @PreAuthorize("permitAll()")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 404, message = "Asset not found")})
+    public ResponseEntity<List<DocumentDTO>> getAssetDocuments(
+            @ApiParam("id") @PathVariable("id") Long id,
+            HttpServletRequest req) {
+        OwnUser user = userService.whoami(req);
+        if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
+            if (!user.getRole().getViewPermissions().contains(PermissionEntity.DOCUMENTS)) {
+                throw new CustomException("Access Denied", HttpStatus.FORBIDDEN);
+            }
+        }
+        List<DocumentDTO> documents = documentService.getDocumentTree("ASSET", id, user.getCompany().getId());
+        return ResponseEntity.ok(documents);
     }
 
 }

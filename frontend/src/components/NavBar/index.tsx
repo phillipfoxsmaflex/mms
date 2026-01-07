@@ -39,14 +39,6 @@ export default function NavBar() {
             justifyContent="space-between"
           >
             <Logo />
-            <Button
-              component={RouterLink}
-              to="/account/login"
-              variant="text"
-              size="medium"
-            >
-              {t('login')}
-            </Button>
           </Stack>
         </Container>
       </HeaderWrapper>

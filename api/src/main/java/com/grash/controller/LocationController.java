@@ -2,6 +2,7 @@ package com.grash.controller;
 
 import com.grash.advancedsearch.SearchCriteria;
 import com.grash.dto.AssetShowDTO;
+import com.grash.dto.DocumentDTO;
 import com.grash.dto.LocationMiniDTO;
 import com.grash.dto.LocationPatchDTO;
 import com.grash.dto.LocationShowDTO;
@@ -14,6 +15,7 @@ import com.grash.model.OwnUser;
 import com.grash.model.enums.PermissionEntity;
 import com.grash.model.enums.RoleType;
 import com.grash.service.AssetService;
+import com.grash.service.DocumentService;
 import com.grash.service.LocationService;
 import com.grash.service.UserService;
 import com.grash.utils.Helper;
@@ -50,6 +52,7 @@ public class LocationController {
     private final AssetService assetService;
     private final AssetMapper assetMapper;
     private final EntityManager em;
+    private final DocumentService documentService;
 
     @GetMapping("")
     @PreAuthorize("permitAll()")
@@ -201,6 +204,25 @@ public class LocationController {
                         HttpStatus.OK);
             } else throw new CustomException("Forbidden", HttpStatus.FORBIDDEN);
         } else throw new CustomException("Location not found", HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/{id}/documents")
+    @PreAuthorize("permitAll()")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 404, message = "Location not found")})
+    public ResponseEntity<List<DocumentDTO>> getLocationDocuments(
+            @ApiParam("id") @PathVariable("id") Long id,
+            HttpServletRequest req) {
+        OwnUser user = userService.whoami(req);
+        if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
+            if (!user.getRole().getViewPermissions().contains(PermissionEntity.DOCUMENTS)) {
+                throw new CustomException("Access Denied", HttpStatus.FORBIDDEN);
+            }
+        }
+        List<DocumentDTO> documents = documentService.getDocumentTree("LOCATION", id, user.getCompany().getId());
+        return ResponseEntity.ok(documents);
     }
 
 }

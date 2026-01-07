@@ -25,22 +25,27 @@ export function useBrand(): BrandConfig {
     addressCity: ''
   };
   const { isLicenseValid } = useSelector((state) => state.license);
+  
+  // Determine logo URLs based on runtime configuration and license validity
+  const getLogoUrl = (isWhite: boolean): string | null => {
+    // Use runtime configuration if available and license is valid
+    if (customLogoPaths) {
+      if (isLicenseValid == null) {
+        return null;
+      }
+      return isLicenseValid
+        ? (isWhite ? customLogoPaths.white : customLogoPaths.dark) || (isWhite ? CUSTOM_DARK_LOGO : CUSTOM_DARK_LOGO)
+        : (isWhite ? DEFAULT_WHITE_LOGO : DEFAULT_DARK_LOGO);
+    }
+    
+    // Default logos
+    return isWhite ? DEFAULT_WHITE_LOGO : DEFAULT_DARK_LOGO;
+  };
+  
   return {
     logo: {
-      white: customLogoPaths
-        ? isLicenseValid == null
-          ? null
-          : isLicenseValid
-          ? CUSTOM_WHITE_LOGO
-          : DEFAULT_WHITE_LOGO
-        : DEFAULT_WHITE_LOGO,
-      dark: customLogoPaths
-        ? isLicenseValid == null
-          ? null
-          : isLicenseValid
-          ? CUSTOM_DARK_LOGO
-          : DEFAULT_DARK_LOGO
-        : DEFAULT_DARK_LOGO
+      white: getLogoUrl(true),
+      dark: getLogoUrl(false)
     },
     ...(isLicenseValid && brandRawConfig ? brandRawConfig : defaultBrand)
   };

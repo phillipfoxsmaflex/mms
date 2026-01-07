@@ -12,6 +12,10 @@ const locale = {
   IN_PROGRESS: 'In Progress',
   ON_HOLD: 'On Hold',
   COMPLETE: 'Complete',
+  new_folder: 'New Folder',
+  create_new_folder: 'Create New Folder',
+  upload_file: 'Upload File',
+  no_documents_yet: 'No documents yet',
   'home.built': 'Built to Make Managing Maintenance Easier',
   home_description:
     "When whiteboards and sticky notes are chaos, and you need maintenance management software that's easy enough for your team to actually use - try {{shortBrandName}}",
@@ -33,6 +37,7 @@ const locale = {
   request_system: 'Work Request System',
   mobile_app: 'Mobile App',
   asset_management: 'Asset Management',
+  documents: 'Documents',
   permits: 'Permits',
   permit_locations: 'Permit Locations',
   management_of_change: 'Management of Change',

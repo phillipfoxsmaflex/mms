@@ -12,6 +12,10 @@ const deJSON = {
   IN_PROGRESS: 'In Bearbeitung',
   ON_HOLD: 'In Wartestellung',
   COMPLETE: 'Abgeschlossen',
+  new_folder: 'Neuer Ordner',
+  create_new_folder: 'Neuen Ordner erstellen',
+  upload_file: 'Datei hochladen',
+  no_documents_yet: 'Noch keine Dokumente',
   'home.built': 'Entwickelt, um die Wartungsverwaltung zu erleichtern',
   home_description:
     'Wenn Whiteboards und Haftnotizen Chaos sind und Sie eine CMMS-Software benötigen, die einfach genug ist, damit Ihr Team sie tatsächlich nutzt - probieren Sie {{shortBrandName}}',
@@ -30,6 +34,7 @@ const deJSON = {
   request_system: 'Arbeitsanforderungssystem',
   mobile_app: 'Mobile App',
   asset_management: 'Anlagenverwaltung',
+  documents: 'Dokumente',
   preventive_maintenance: 'Präventive Wartung',
   parts_inventory: 'Teileinventar',
   custom_dashboards: 'Benutzerdefinierte Dashboards',

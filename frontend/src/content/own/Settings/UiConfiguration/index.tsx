@@ -8,16 +8,12 @@ import { FieldConfigurationsType } from '../../../../contexts/JWTAuthContext';
 import GrayWhiteSelector from '../components/GrayWhiteSelector';
 import { useDispatch } from '../../../../store';
 import Loading from '../../Analytics/Loading';
-import LogoUpload from '../../../../components/LogoUpload';
-import { useState } from 'react';
 
 function UiConfigurationSettings() {
   const { t }: { t: any } = useTranslation();
   const dispatch = useDispatch();
   const {
     patchUiConfiguration,
-    uploadCustomLogo,
-    removeCustomLogo,
     user: { uiConfiguration }
   } = useAuth();
   const fields: { label: string; name: keyof Omit<UiConfiguration, 'id'> }[] = [
@@ -43,33 +39,7 @@ function UiConfigurationSettings() {
     { label: t('hide'), value: false.toString() }
   ];
 
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  const handleLogoUpload = async (file: File) => {
-    try {
-      setIsUploading(true);
-      setUploadSuccess(false);
-      await uploadCustomLogo(file);
-      setUploadSuccess(true);
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleLogoRemove = async () => {
-    try {
-      setIsUploading(true);
-      await removeCustomLogo();
-      setUploadSuccess(false);
-    } catch (error) {
-      console.error('Error removing logo:', error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   return (
     <Formik initialValues={{}} onSubmit={() => null}>
@@ -107,17 +77,7 @@ function UiConfigurationSettings() {
                 )}
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <Box p={4}>
-                <LogoUpload
-                  currentLogo={uiConfiguration?.customLogo}
-                  onLogoUpload={handleLogoUpload}
-                  onLogoRemove={handleLogoRemove}
-                  isUploading={isUploading}
-                  uploadSuccess={uploadSuccess}
-                />
-              </Box>
-            </Grid>
+
           </Grid>
         </form>
       )}

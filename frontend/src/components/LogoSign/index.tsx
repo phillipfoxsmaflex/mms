@@ -60,12 +60,18 @@ function Logo({ white }: OwnProps) {
   const mobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { logo, name: brandName } = useBrand();
 
+  // Check for custom logo from static path first
+  const customLogoUrl = '/logo/customlogo.png';
+  
+  // Determine which logo to use - prioritize custom logo from static path, then useBrand logos
+  const logoUrl = customLogoUrl || (white ? logo.white : logo.dark);
+
   return (
     <TooltipWrapper title={brandName} arrow>
       <LogoWrapper to="/overview">
         <LogoSignWrapper>
           <img
-            src={white ? logo.white : logo.dark}
+            src={logoUrl}
             width={`${width * (mobile ? 0.7 : 1)}px`}
             height={`${height * (mobile ? 0.7 : 1)}px`}
           />
