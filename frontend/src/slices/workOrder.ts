@@ -368,4 +368,39 @@ export const getUrgentWorkOrdersCount = (): AppThunk => async (dispatch) => {
 export const clearSingleWorkOrder = (): AppThunk => async (dispatch) => {
   dispatch(slice.actions.clearSingleWorkOrder({}));
 };
+
+
+export const updateWorkOrderDates =
+  (id: number, startDate: Date, endDate?: Date): AppThunk =>
+  async (dispatch) => {
+    try {
+      // Prepare the update data
+      const updateData: any = {
+        estimatedStartDate: startDate.toISOString()
+      };
+
+      // Only include end date if provided
+      if (endDate) {
+        updateData.dueDate = endDate.toISOString();
+      }
+
+      // Make the API call to update the work order
+      const response = await api.patch<WorkOrder>(
+        `${basePath}/${id}`,
+        updateData
+      );
+
+      // Update the work order in the store
+      dispatch(slice.actions.editWorkOrder({ workOrder: response }));
+
+      // Refresh calendar events to show the updated work order
+      const now = new Date();
+      dispatch(getWorkOrderEvents(now, new Date(now.setMonth(now.getMonth() + 1))));
+
+    } catch (error) {
+      console.error('Failed to update work order dates:', error);
+      // TODO: Add proper error handling and user notification
+      throw error;
+    }
+  };
 export default slice;

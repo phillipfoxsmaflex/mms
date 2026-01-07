@@ -1358,6 +1358,13 @@ const locale = {
   verify_email_title: 'Verify Email',
   verify_email_description:
     "A verification email has been sent to you. Check the spams if you don't see it in your inbox.",
+  available_work_orders: 'Available Work Orders',
+  no_available_work_orders: 'No available work orders to drag and drop',
+  all_work_orders_scheduled: 'All work orders have been scheduled',
+  loading_work_orders: 'Loading work orders...',
+  drag_drop_instructions: 'Drag work orders to the calendar to schedule them',
+  show_more: 'Show more',
+  show_less: 'Show less',
   upgrade: 'Upgrade',
   downgrade: 'Downgrade',
   upgrade_description:
