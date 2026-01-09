@@ -15,4 +15,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("update Notification n set n.seen=true where n.user.id=:userId and n.seen=false")
     @Modifying
     void readAll(@Param("userId") Long userId);
+
+    boolean existsByResourceIdAndMessageContaining(Long resourceId, String message);
 }

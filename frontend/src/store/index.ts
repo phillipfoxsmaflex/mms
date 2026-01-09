@@ -21,6 +21,7 @@ export type StoreReturnType =
   | number
   | number[]
   | string
+  | boolean
   | ImportResponse;
 export type AppThunk = ThunkAction<
   Promise<StoreReturnType>,

@@ -57,6 +57,7 @@ public class WorkOrderService {
     private WorkflowService workflowService;
     private final MessageSource messageSource;
     private final CustomSequenceService customSequenceService;
+    private final SafetyInstructionService safetyInstructionService;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -82,6 +83,10 @@ public class WorkOrderService {
 
         WorkOrder savedWorkOrder = workOrderRepository.saveAndFlush(workOrder);
         em.refresh(savedWorkOrder);
+        
+        // Check contractor employee safety instruction
+        checkAndWarnContractorEmployeeSafetyInstruction(savedWorkOrder, Helper.getLocale(company));
+        
         notify(savedWorkOrder, Helper.getLocale(company));
         Collection<Workflow> workflows =
                 workflowService.findByMainConditionAndCompany(WFMainCondition.WORK_ORDER_CREATED, company.getId());
@@ -143,16 +148,58 @@ public class WorkOrderService {
         Collection<OwnUser> users = workOrder.getUsers();
         notificationService.createMultiple(users.stream().map(user -> new Notification(message, user,
                 NotificationType.WORK_ORDER, workOrder.getId())).collect(Collectors.toList()), true, title);
-
+        
         Map<String, Object> mailVariables = new HashMap<String, Object>() {{
             put("workOrderLink", frontendUrl + "/app/work-orders/" + workOrder.getId());
             put("featuresLink", frontendUrl + "/#key-features");
             put("workOrderTitle", workOrder.getTitle());
+            put("workOrderDescription", workOrder.getDescription());
+            put("workOrderDueDate", workOrder.getDueDate() != null ? workOrder.getDueDate().toString() : "");
+            put("workOrderPriority", workOrder.getPriority() != null ? workOrder.getPriority().toString() : "");
+            put("workOrderLocation", workOrder.getLocation() != null ? workOrder.getLocation().getName() : "");
+            put("workOrderAsset", workOrder.getAsset() != null ? workOrder.getAsset().getName() : "");
+            put("workOrderCategory", workOrder.getCategory() != null ? workOrder.getCategory().getName() : "");
+            put("workOrderCustomId", workOrder.getCustomId());
         }};
-        Collection<OwnUser> usersToMail =
-                users.stream().filter(user -> user.isEnabled() && user.getUserSettings().shouldEmailUpdatesForWorkOrders()).collect(Collectors.toList());
-        if (!usersToMail.isEmpty()) {
-            emailService2.sendMessageUsingThymeleafTemplate(usersToMail.stream().map(OwnUser::getEmail).toArray(String[]::new), messageSource.getMessage("new_wo", null, locale), mailVariables, "new-work-order.html", Helper.getLocale(users.stream().findFirst().get()));
+        
+        String emailSubject = messageSource.getMessage("email_wo_assigned_subject", null, locale);
+        String emailTemplate = messageSource.getMessage("email_wo_assigned_template", null, locale);
+        
+        users.forEach(user -> {
+            if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+                try {
+                    emailService2.sendEmailWithTemplate(user.getEmail(), emailSubject, emailTemplate, mailVariables);
+                } catch (Exception e) {
+                    // Log error but don't fail the notification
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public boolean checkContractorEmployeeSafetyInstruction(WorkOrder workOrder) {
+        if (workOrder.getAssignedToEmployee() != null) {
+            return safetyInstructionService.isEmployeeInstructionValid(workOrder.getAssignedToEmployee().getId());
+        }
+        return true; // No contractor employee assigned, so no check needed
+    }
+
+    public void checkAndWarnContractorEmployeeSafetyInstruction(WorkOrder workOrder, Locale locale) {
+        if (workOrder.getAssignedToEmployee() != null) {
+            boolean isValid = safetyInstructionService.isEmployeeInstructionValid(workOrder.getAssignedToEmployee().getId());
+            
+            if (!isValid) {
+                String title = messageSource.getMessage("safety_instruction_warning", null, locale);
+                String message = messageSource.getMessage("notification_safety_instruction_expired", 
+                    new Object[]{workOrder.getAssignedToEmployee().getFirstName() + " " + workOrder.getAssignedToEmployee().getLastName()},
+                    locale);
+                
+                // Notify the work order creator and admins
+                OwnUser creator = userService.findById(workOrder.getCreatedBy()).orElse(null);
+                if (creator != null) {
+                    notificationService.create(new Notification(message, creator, NotificationType.WARNING, workOrder.getId()), true, title);
+                }
+            }
         }
     }
 

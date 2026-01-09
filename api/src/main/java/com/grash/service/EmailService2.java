@@ -137,4 +137,16 @@ public class EmailService2 {
         }
     }
 
+    public void sendEmailWithTemplate(String to, String subject, String template, Map<String, Object> templateModel) {
+        if (Boolean.FALSE.equals(enableEmails))
+            return;
+        sendMessageUsingThymeleafTemplate(new String[]{to}, subject, templateModel, template, Locale.getDefault());
+    }
+
+    public void sendEmail(String to, String subject, String text) {
+        if (Boolean.FALSE.equals(enableEmails))
+            return;
+        sendSimpleMessage(new String[]{to}, subject, text);
+    }
+
 }

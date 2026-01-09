@@ -2,9 +2,16 @@ FROM node:21.6.1 AS build
 
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm config set fetch-retry-maxtimeout 6000000
-RUN npm config set fetch-retry-mintimeout 1000000
-RUN NODE_OPTIONS="--max_old_space_size=4096" npm install --legacy-peer-deps
+
+# Configure npm for better network resilience
+RUN npm config set registry https://registry.npmjs.org/
+
+# Uncomment the following lines if you're behind a corporate proxy
+# RUN npm config set proxy http://your-proxy-server:port && \
+#     npm config set https-proxy http://your-proxy-server:port
+
+# Install dependencies with better network handling
+RUN NODE_OPTIONS="--max_old_space_size=4096" npm install --legacy-peer-deps --prefer-offline --no-audit --no-fund
 COPY . .
 RUN npm run build
 

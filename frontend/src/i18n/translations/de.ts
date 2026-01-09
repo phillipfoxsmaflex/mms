@@ -505,6 +505,10 @@ const deJSON = {
   teams: 'Teams',
   vendors_customers: 'Lieferanten & Auftragnehmer',
   vendors: 'Lieferanten',
+  contractors: 'Auftragnehmer',
+  contractor_calendar: 'Auftragnehmerkalender',
+  contractor_employees: 'Auftragnehmer-Mitarbeiter',
+  safety_instructions: 'Sicherheitsunterweisungen',
   categories: 'Kategorien',
   settings: 'Einstellungen',
   //request

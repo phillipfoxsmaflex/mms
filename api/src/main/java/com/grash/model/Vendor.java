@@ -61,4 +61,13 @@ public class Vendor extends BasicInfos {
                     @Index(name = "idx_vendor_part_part_id", columnList = "id_part")
             })
     private List<Part> parts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "vendor")
+    private List<SafetyInstruction> safetyInstructions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "vendor")
+    private List<ContractorEmployee> employees = new ArrayList<>();
+
+    @OneToMany(mappedBy = "vendor")
+    private List<ContractorCalendarEntry> calendarEntries = new ArrayList<>();
 }

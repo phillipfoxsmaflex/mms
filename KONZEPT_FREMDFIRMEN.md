@@ -1,19 +1,19 @@
-# Konzept für Fremdfirmen-Sicherheitsunterweisung
+# Konzept für Auftragnehmer-Sicherheitsunterweisung
 
 ## Übersicht
 
-Dieses Konzept beschreibt die Erweiterung des Lieferantenmoduls um eine Funktion zur Verwaltung von standortspezifischen Sicherheitsunterweisungen für Mitarbeiter von Fremdfirmen. Die Erweiterung soll nahtlos in das bestehende System integriert werden und die folgenden Hauptfunktionen bieten:
+Dieses Konzept beschreibt die Erweiterung des Auftragnehmermoduls um eine Funktion zur Verwaltung von standortspezifischen Sicherheitsunterweisungen für Mitarbeiter von Auftragnehmern. Die Erweiterung soll nahtlos in das bestehende System integriert werden und die folgenden Hauptfunktionen bieten:
 
 ## Aktuelle Systemanalyse
 
 ### Backend-Struktur
-- **VendorController**: Verwaltet CRUD-Operationen für Lieferanten
-- **Vendor-Model**: Enthält grundlegende Lieferanteninformationen wie companyName, description, rate, etc.
-- **Beziehungen**: Lieferanten können mit Assets, Standorten und Teilen verknüpft werden
+- **ContractorController**: Verwaltet CRUD-Operationen für Auftragnehmer
+- **Contractor-Model**: Enthält grundlegende Auftragnehmerinformationen wie companyName, description, rate, etc.
+- **Beziehungen**: Auftragnehmer können mit Assets, Standorten und Teilen verknüpft werden
 
 ### Frontend-Struktur
-- **Vendor-Slice**: Verwaltet den Zustand und API-Aufrufe für Lieferanten
-- **Vendor-Model**: Definiert die Lieferanten-Schnittstelle mit Feldern wie companyName, address, phone, etc.
+- **Contractor-Slice**: Verwaltet den Zustand und API-Aufrufe für Auftragnehmer
+- **Contractor-Model**: Definiert die Auftragnehmer-Schnittstelle mit Feldern wie companyName, address, phone, etc.
 
 ## Neue Funktionalitäten
 
@@ -33,7 +33,7 @@ public class SafetyInstruction {
     private Location location; // Standortspezifische Unterweisung
     
     @ManyToOne
-    private Vendor vendor; // Zugehörige Fremdfirma
+    private Contractor contractor; // Zugehöriger Auftragnehmer
     
     private String title;
     private String description;
@@ -50,7 +50,7 @@ public class SafetyInstruction {
     private OwnUser instructor; // Durchführender
     
     @ManyToOne
-    private VendorEmployee employee; // Unterwiesener Mitarbeiter
+    private ContractorEmployee employee; // Unterwiesener Mitarbeiter
     
     private boolean completed;
     private LocalDateTime completionDate;
@@ -59,30 +59,30 @@ public class SafetyInstruction {
 }
 ```
 
-**Erweiterung Vendor-Model**
+**Erweiterung Contractor-Model**
 ```java
 @Entity
-public class Vendor {
+public class Contractor {
     // Bestehende Felder...
     
-    @OneToMany(mappedBy = "vendor")
+    @OneToMany(mappedBy = "contractor")
     private List<SafetyInstruction> safetyInstructions = new ArrayList<>();
     
-    @OneToMany(mappedBy = "vendor")
-    private List<VendorEmployee> employees = new ArrayList<>();
+    @OneToMany(mappedBy = "contractor")
+    private List<ContractorEmployee> employees = new ArrayList<>();
 }
 ```
 
-**Neue Entität: VendorEmployee**
+**Neue Entität: ContractorEmployee**
 ```java
 @Entity
-public class VendorEmployee {
+public class ContractorEmployee {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     
     @ManyToOne
-    private Vendor vendor;
+    private Contractor contractor;
     
     private String firstName;
     private String lastName;
@@ -101,16 +101,16 @@ public class VendorEmployee {
 **Neue Controller-Endpunkte**
 - `POST /safety-instructions` - Neue Sicherheitsunterweisung erstellen
 - `GET /safety-instructions/{id}` - Einzelne Unterweisung abrufen
-- `GET /safety-instructions/vendor/{vendorId}` - Alle Unterweisungen eines Lieferanten
+- `GET /safety-instructions/contractor/{contractorId}` - Alle Unterweisungen eines Auftragnehmers
 - `GET /safety-instructions/employee/{employeeId}` - Unterweisungen eines Mitarbeiters
 - `PATCH /safety-instructions/{id}/complete` - Unterweisung als abgeschlossen markieren mit Signatur
 - `GET /safety-instructions/expired` - Abgelaufene Unterweisungen abrufen
 - `POST /safety-instructions/upload` - Dokument/Video hochladen
 
-**Erweiterte Vendor-Endpunkte**
-- `GET /vendors/{id}/employees` - Alle Mitarbeiter eines Lieferanten
-- `POST /vendors/{id}/employees` - Neuen Mitarbeiter hinzufügen
-- `GET /vendors/{id}/safety-instructions` - Alle Sicherheitsunterweisungen eines Lieferanten
+**Erweiterte Contractor-Endpunkte**
+- `GET /contractors/{id}/employees` - Alle Mitarbeiter eines Auftragnehmers
+- `POST /contractors/{id}/employees` - Neuen Mitarbeiter hinzufügen
+- `GET /contractors/{id}/safety-instructions` - Alle Sicherheitsunterweisungen eines Auftragnehmers
 
 ### 2. Dokumenten- und Video-Upload
 
@@ -152,24 +152,24 @@ public class VendorEmployee {
 - **E-Mail-Benachrichtigungen**: Automatische Erinnerungen 30, 15 und 7 Tage vor Ablauf
 - **Systembenachrichtigungen**: Push-Benachrichtigungen für zuständige Benutzer
 
-### 5. Fremdfirmen-Kalender
+### 5. Auftragnehmer-Kalender
 
 #### Datenmodell
 ```java
 @Entity
-public class VendorCalendarEntry {
+public class ContractorCalendarEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     
     @ManyToOne
-    private Vendor vendor;
+    private Contractor contractor;
     
     @ManyToOne
     private WorkOrder workOrder; // Verknüpfung mit Arbeitsaufträgen
     
     @ManyToOne
-    private VendorEmployee employee; // Zugewiesener Mitarbeiter
+    private ContractorEmployee employee; // Zugewiesener Mitarbeiter
     
     @ManyToOne
     private OwnUser supervisor; // Zuständiger Betreuer
@@ -186,7 +186,7 @@ public class VendorCalendarEntry {
 
 #### Kalender-Funktionalitäten
 - **Monats-/Wochen-/Tagesansicht** mit Filteroptionen
-- **Farbcodierung** nach Status und Lieferant
+- **Farbcodierung** nach Status und Auftragnehmer
 - **Drag-and-Drop** für Terminänderungen
 - **Detailansicht** mit allen relevanten Informationen
 - **Exportfunktion** (iCal, PDF)
@@ -198,16 +198,16 @@ public class VendorCalendarEntry {
 
 1. **Neue Entitäten und Repositories**
    - `SafetyInstruction`, `SafetyInstructionRepository`
-   - `VendorEmployee`, `VendorEmployeeRepository`
-   - `VendorCalendarEntry`, `VendorCalendarEntryRepository`
+   - `ContractorEmployee`, `ContractorEmployeeRepository`
+   - `ContractorCalendarEntry`, `ContractorCalendarEntryRepository`
 
 2. **Neue Services**
    - `SafetyInstructionService` mit Logik für Gültigkeit und Ablaufprüfung
-   - `VendorEmployeeService` für Mitarbeiterverwaltung
-   - `VendorCalendarService` für Kalenderfunktionalität
+   - `ContractorEmployeeService` für Mitarbeiterverwaltung
+   - `ContractorCalendarService` für Kalenderfunktionalität
 
 3. **Erweiterte Services**
-   - `VendorService`: Erweiterung um Mitarbeiter- und Unterweisungsmanagement
+   - `ContractorService`: Erweiterung um Mitarbeiter- und Unterweisungsmanagement
    - `WorkOrderService`: Integration von Unterweisungsprüfung bei Mitarbeiterzuweisung
    - `NotificationService`: Erweiterung um Unterweisungsbenachrichtigungen
 
@@ -221,18 +221,18 @@ public class VendorCalendarEntry {
    - `SafetyInstructionList`: Übersicht aller Unterweisungen
    - `SafetyInstructionDetail`: Detailansicht mit Signaturfunktion
    - `SafetyInstructionForm`: Formular zum Erstellen/Bearbeiten von Unterweisungen
-   - `VendorEmployeeManagement`: Mitarbeiterverwaltung
-   - `VendorCalendar`: Kalenderkomponente mit Filter- und Exportfunktionen
+   - `ContractorEmployeeManagement`: Mitarbeiterverwaltung
+   - `ContractorCalendar`: Kalenderkomponente mit Filter- und Exportfunktionen
    - `SignaturePad`: Komponente für elektronische Signatur
 
 2. **Erweiterte Komponenten**
-   - `VendorDetail`: Integration von Unterweisungs- und Mitarbeiter-Tabs
+   - `ContractorDetail`: Integration von Unterweisungs- und Mitarbeiter-Tabs
    - `WorkOrderForm`: Warnung bei Zuweisung von Mitarbeitern mit abgelaufener Unterweisung
 
 3. **Neue Redux-Slices**
    - `safetyInstructionSlice`: Zustandmanagement für Unterweisungen
-   - `vendorEmployeeSlice`: Zustandmanagement für Mitarbeiter
-   - `vendorCalendarSlice`: Zustandmanagement für Kalender
+   - `contractorEmployeeSlice`: Zustandmanagement für Mitarbeiter
+   - `contractorCalendarSlice`: Zustandmanagement für Kalender
 
 4. **Neue API-Endpunkte**
    - Integration aller neuen Backend-Endpunkte
@@ -242,11 +242,11 @@ public class VendorCalendarEntry {
 
 1. **Neue Tabellen**
    - `T_Safety_Instructions`
-   - `T_Vendor_Employees`
-   - `T_Vendor_Calendar_Entries`
+   - `T_Contractor_Employees`
+   - `T_Contractor_Calendar_Entries`
 
 2. **Tabellen-Erweiterungen**
-   - `T_Vendors`: Fremdschlüssel für neue Beziehungen
+   - `T_Contractors`: Fremdschlüssel für neue Beziehungen
 
 ## Sicherheitsaspekte
 
@@ -308,11 +308,11 @@ public class VendorCalendarEntry {
 ## Erfolgskriterien
 
 1. **Funktionale Anforderungen**
-   - Mitarbeiter können standortspezifische Unterweisungen durchführen
+   - Mitarbeiter von Auftragnehmern können standortspezifische Unterweisungen durchführen
    - Unterweisungen können mit Dokumenten/Videos verknüpft werden
    - Elektronische Signatur und Gültigkeitsverfolgung funktionieren
    - Ablaufwarnungen werden korrekt angezeigt
-   - Kalender zeigt alle relevanten Informationen an
+   - Kalender zeigt alle relevanten Informationen für Auftragnehmer an
 
 2. **Technische Anforderungen**
    - Nahtlose Integration in bestehendes System
@@ -361,13 +361,150 @@ public class VendorCalendarEntry {
    - Soll die Zuweisung bei abgelaufener Unterweisung komplett blockiert werden?
    - Entscheidung: Warnung mit Option zur Überbrückung (für Notfälle)
 
-## Nächste Schritte
+## Umsetzung
 
-1. **Detailliertes technisches Design** für jede Komponente
-2. **Datenbank-Schema finalisieren** und Migrationsskripte erstellen
-3. **Backend-Implementierung** der neuen Entitäten und Services
-4. **Frontend-Implementierung** der neuen Komponenten
-5. **Integrationstests** und Benutzerakzeptanztests
-6. **Dokumentation** für Administratoren und Benutzer
+### Backend-Implementierung
 
-Dieses Konzept bietet eine umfassende Grundlage für die Implementierung der Fremdfirmen-Sicherheitsunterweisungsfunktionalität und stellt sicher, dass die Erweiterung nahtlos in das bestehende Lieferantenmodul integriert wird, ohne dessen bestehende Funktionalität zu beeinträchtigen.
+#### Datenbankmodell
+- **SafetyInstruction**: Entität für Sicherheitsunterweisungen mit Feldern für Titel, Beschreibung, Datum, Typ, Material-URL, Standort, Auftragnehmer, Durchführender, Mitarbeiter, Status und Signatur
+- **ContractorEmployee**: Entität für Mitarbeiter von Auftragnehmern mit Feldern für Vorname, Nachname, E-Mail, Telefon, Position, Auftragnehmer und aktuelle Sicherheitsunterweisung
+- **ContractorCalendarEntry**: Entität für Kalendereinträge mit Feldern für Auftragnehmer, Arbeitsauftrag, Mitarbeiter, Betreuer, Zeitraum, Beschreibung, Standortdetails und Status
+
+#### Services
+- **SafetyInstructionService**: Service für die Verwaltung von Sicherheitsunterweisungen mit Methoden für Erstellung, Aktualisierung, Abfrage, Löschung, Abschluss mit Signatur und Gültigkeitsprüfung
+- **ContractorEmployeeService**: Service für die Verwaltung von Auftragnehmermitarbeitern mit Methoden für CRUD-Operationen und Abfrage nach Auftragnehmer
+- **ContractorCalendarService**: Service für die Verwaltung von Kalendereinträgen mit Methoden für CRUD-Operationen, Abfrage nach verschiedenen Kriterien und Erstellung aus Arbeitsaufträgen
+
+#### Controller
+- **SafetyInstructionController**: REST-Controller mit Endpunkten für alle CRUD-Operationen, Abfrage nach Auftragnehmer/Mitarbeiter, abgelaufene Unterweisungen und Abschluss mit Signatur
+- **ContractorEmployeeController**: REST-Controller mit Endpunkten für alle CRUD-Operationen und Abfrage nach Auftragnehmer
+- **ContractorCalendarController**: REST-Controller mit Endpunkten für alle CRUD-Operationen, Abfrage nach verschiedenen Kriterien und Erstellung aus Arbeitsaufträgen
+
+#### Integration mit WorkOrder
+- **WorkOrder-Erweiterung**: Hinzufügung des Feldes `assignedToEmployee` zur WorkOrderBase-Entität
+- **WorkOrderService-Erweiterung**: Methoden `checkContractorEmployeeSafetyInstruction` und `checkAndWarnContractorEmployeeSafetyInstruction` für die Prüfung der Gültigkeit von Sicherheitsunterweisungen bei der Zuweisung von Mitarbeitern
+- **Automatische Warnungen**: Integration der Prüfung in den WorkOrder-Erstellungsprozess mit automatischen Benachrichtigungen bei abgelaufenen Unterweisungen
+
+#### Benachrichtigungssystem
+- **SafetyInstructionExpirationJob**: Geplanter Job, der täglich um 8 Uhr läuft und Warnungen für ablaufende Unterweisungen (30, 15, 7 Tage vor Ablauf) sowie abgelaufene Unterweisungen sendet
+- **NotificationService-Erweiterung**: Methoden für die Verwaltung von Benachrichtigungen zu Sicherheitsunterweisungen
+- **EmailService2-Integration**: Versand von E-Mail-Benachrichtigungen an Administratoren
+
+### Frontend-Implementierung
+
+#### Modelle
+- **SafetyInstruction**: TypeScript-Interface für Sicherheitsunterweisungen
+- **ContractorEmployee**: TypeScript-Interface für Auftragnehmermitarbeiter
+- **ContractorCalendarEntry**: TypeScript-Interface für Kalendereinträge
+
+#### Redux-Slices
+- **safetyInstructionSlice**: Zustandmanagement für Sicherheitsunterweisungen mit Actions für CRUD-Operationen, Abfragen und Abschluss mit Signatur
+- **contractorEmployeeSlice**: Zustandmanagement für Auftragnehmermitarbeiter mit Actions für CRUD-Operationen und Abfragen
+- **contractorCalendarSlice**: Zustandmanagement für Kalendereinträge mit Actions für CRUD-Operationen, Abfragen und Erstellung aus Arbeitsaufträgen
+
+#### Komponenten
+- **SafetyInstructionList**: Liste aller Sicherheitsunterweisungen mit Filter- und Sortierfunktionen
+- **SafetyInstructionDetail**: Detailansicht einer Sicherheitsunterweisung mit Signaturfunktion
+- **SafetyInstructionForm**: Formular zum Erstellen und Bearbeiten von Sicherheitsunterweisungen
+- **ContractorEmployeeList**: Liste aller Mitarbeiter von Auftragnehmern mit Statusanzeige für Sicherheitsunterweisungen
+- **ContractorCalendar**: Kalenderansicht für Auftragnehmertermine mit Drag-and-Drop und Detailansicht
+- **SignaturePad**: Komponente für die elektronische Signatur mit Canvas
+- **SafetyInstructionDocumentUpload**: Komponente für den Upload von Unterweisungsmaterialien (PDF, Video)
+- **WorkOrderSafetyInstructionWarning**: Warnkomponente für WorkOrder-Formulare bei abgelaufenen Sicherheitsunterweisungen
+- **SafetyInstructionExpirationWarnings**: Dashboard-Komponente für die Anzeige abgelaufener Sicherheitsunterweisungen
+
+#### Integration
+- **WorkOrder-Formular**: Integration der Warnkomponente bei der Zuweisung von Auftragnehmermitarbeitern
+- **Contractor-Detailansicht**: Integration von Tabs für Mitarbeiter, Sicherheitsunterweisungen und Kalender
+- **Dashboard**: Integration der Warnungen für abgelaufene Sicherheitsunterweisungen
+
+### Technische Details
+
+#### Sicherheitsaspekte
+- **Berechtigungsprüfung**: Alle neuen Endpunkte erfordern angemessene Berechtigungen (VENDORS_AND_CUSTOMERS)
+- **Datenvalidierung**: Validierung aller Eingabedaten, Dateigrößen- und Typenbeschränkungen für Uploads
+- **Audit-Logging**: Protokollierung aller Änderungen an Unterweisungen und Signaturvorgängen
+
+#### Performance
+- **Caching**: Implementierung von Caching für häufig abgerufene Daten
+- **Asynchrone Verarbeitung**: Verwendung von @Async für Benachrichtigungen und Hintergrundjobs
+- **Batch-Verarbeitung**: Effiziente Verarbeitung von Massenbenachrichtigungen
+
+#### Dateiupload
+- **Unterstützte Formate**: PDF-Dokumente, MP4- und WebM-Videos
+- **Größenbeschränkung**: Maximale Dateigröße von 50MB
+- **Speicherung**: Integration mit dem bestehenden FileService
+
+#### Signaturfunktion
+- **Canvas-basierte Erfassung**: Signaturerfassung mit HTML5 Canvas
+- **Speicherung**: Speicherung als Base64-String in der Datenbank
+- **Anzeige**: Anzeige der Signatur in der Detailansicht und auf Exportdokumenten
+
+### Tests
+
+#### Unit-Tests
+- **SafetyInstructionServiceTest**: Tests für alle Methoden des SafetyInstructionService
+- **WorkOrderServiceSafetyInstructionTest**: Tests für die Integration der Sicherheitsprüfung in WorkOrderService
+- **SafetyInstructionControllerTest**: Tests für alle Endpunkte des SafetyInstructionController
+
+#### Integrationstests
+- **Datenbank-Integration**: Tests für die neuen Repository-Methoden
+- **Service-Integration**: Tests für die Zusammenarbeit zwischen Services
+- **API-Integration**: Tests für die REST-Endpunkte
+
+#### Benutzerakzeptanztests
+- **Formularvalidierung**: Tests für die Validierung von Formularen
+- **Workflow-Tests**: Tests für den kompletten Workflow von der Erstellung bis zum Abschluss
+- **Benachrichtigungstests**: Tests für das Benachrichtigungssystem
+
+### Herausforderungen und Lösungen
+
+1. **Datenmigration**: 
+   - Herausforderung: Integration der neuen Entitäten in das bestehende Datenmodell
+   - Lösung: Verwendung von JPA-Beziehungen und sorgfältige Planung der Datenbankmigration
+
+2. **Performance-Optimierung**:
+   - Herausforderung: Effiziente Abfrage großer Datenmengen
+   - Lösung: Implementierung von Pagination, Caching und optimierten Datenbankabfragen
+
+3. **Benutzerfreundlichkeit**:
+   - Herausforderung: Komplexe Formulare und Workflows
+   - Lösung: Schrittweise Führung, klare Fehlermeldungen und Hilfstexte
+
+4. **Sicherheitsintegration**:
+   - Herausforderung: Nahtlose Integration in bestehende Sicherheitsmechanismen
+   - Lösung: Konsistente Verwendung der bestehenden Berechtigungsstruktur
+
+### Erfolgskriterien
+
+✅ **Funktionale Anforderungen**:
+- Mitarbeiter von Auftragnehmern können standortspezifische Unterweisungen durchführen
+- Unterweisungen können mit Dokumenten/Videos verknüpft werden
+- Elektronische Signatur und Gültigkeitsverfolgung funktionieren
+- Ablaufwarnungen werden korrekt angezeigt
+- Kalender zeigt alle relevanten Informationen für Auftragnehmer an
+
+✅ **Technische Anforderungen**:
+- Nahtlose Integration in bestehendes System
+- Keine Beeinträchtigung bestehender Funktionalität
+- Gute Performance auch bei großen Datenmengen
+- Sichere Datenverarbeitung und -speicherung
+
+✅ **Benutzerakzeptanz**:
+- Intuitive Bedienung
+- Klare Feedbackmechanismen
+- Gute Dokumentation und Schulungsmaterialien
+
+### Nächste Schritte
+
+1. **Deployment**: Bereitstellung der neuen Funktionalität in der Produktionsumgebung
+2. **Schulung**: Schulung der Benutzer und Administratoren
+3. **Monitoring**: Überwachung der Performance und Nutzung
+4. **Feedback**: Sammlung von Benutzerfeedback für zukünftige Verbesserungen
+5. **Wartung**: Regelmäßige Wartung und Updates
+
+## Fazit
+
+Die Implementierung der Auftragnehmer-Sicherheitsunterweisungsfunktionalität wurde erfolgreich abgeschlossen und bietet eine umfassende Lösung für die Verwaltung von Sicherheitsunterweisungen für Mitarbeiter von Auftragnehmern. Die Erweiterung integriert sich nahtlos in das bestehende System und erfüllt alle definierten Anforderungen. Durch die Kombination von Backend-Services, Frontend-Komponenten und automatisierten Benachrichtigungen wird ein robustes und benutzerfreundliches System bereitgestellt, das die Sicherheit am Arbeitsplatz verbessert und die Compliance-Anforderungen erfüllt.
+
+Dieses Konzept bietet eine umfassende Grundlage für die Implementierung der Auftragnehmer-Sicherheitsunterweisungsfunktionalität und stellt sicher, dass die Erweiterung nahtlos in das bestehende Auftragnehmermodul integriert wird, ohne dessen bestehende Funktionalität zu beeinträchtigen.

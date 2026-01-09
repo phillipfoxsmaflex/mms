@@ -239,6 +239,11 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    public Collection<OwnUser> findAdminsForCompany(Long companyId) {
+        // Find users with admin roles for the given company
+        return userRepository.findByCompany_IdAndRole_RoleType(companyId, com.grash.model.enums.RoleType.ROLE_ADMIN);
+    }
+
     public void enableUser(String email) {
         OwnUser user = userRepository.findByEmailIgnoreCase(email).get();
         if (user.getRole().isPaid()) {

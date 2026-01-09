@@ -132,4 +132,55 @@ public class VendorController {
         } else throw new CustomException("Vendor not found", HttpStatus.NOT_FOUND);
     }
 
+    @GetMapping("/{id}/employees")
+    @PreAuthorize("hasRole('ROLE_CLIENT')")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 404, message = "Vendor not found")})
+    public Collection<com.grash.model.ContractorEmployee> getEmployees(@ApiParam("id") @PathVariable("id") Long id, HttpServletRequest req) {
+        OwnUser user = userService.whoami(req);
+        Optional<Vendor> optionalVendor = vendorService.findById(id);
+        if (optionalVendor.isPresent()) {
+            Vendor savedVendor = optionalVendor.get();
+            if (user.getRole().getViewPermissions().contains(PermissionEntity.VENDORS_AND_CUSTOMERS)) {
+                return savedVendor.getEmployees();
+            } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
+        } else throw new CustomException("Vendor not found", HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/{id}/safety-instructions")
+    @PreAuthorize("hasRole('ROLE_CLIENT')")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 404, message = "Vendor not found")})
+    public Collection<com.grash.model.SafetyInstruction> getSafetyInstructions(@ApiParam("id") @PathVariable("id") Long id, HttpServletRequest req) {
+        OwnUser user = userService.whoami(req);
+        Optional<Vendor> optionalVendor = vendorService.findById(id);
+        if (optionalVendor.isPresent()) {
+            Vendor savedVendor = optionalVendor.get();
+            if (user.getRole().getViewPermissions().contains(PermissionEntity.VENDORS_AND_CUSTOMERS)) {
+                return savedVendor.getSafetyInstructions();
+            } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
+        } else throw new CustomException("Vendor not found", HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/{id}/calendar")
+    @PreAuthorize("hasRole('ROLE_CLIENT')")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 404, message = "Vendor not found")})
+    public Collection<com.grash.model.ContractorCalendarEntry> getCalendarEntries(@ApiParam("id") @PathVariable("id") Long id, HttpServletRequest req) {
+        OwnUser user = userService.whoami(req);
+        Optional<Vendor> optionalVendor = vendorService.findById(id);
+        if (optionalVendor.isPresent()) {
+            Vendor savedVendor = optionalVendor.get();
+            if (user.getRole().getViewPermissions().contains(PermissionEntity.VENDORS_AND_CUSTOMERS)) {
+                return savedVendor.getCalendarEntries();
+            } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
+        } else throw new CustomException("Vendor not found", HttpStatus.NOT_FOUND);
+    }
+
 }

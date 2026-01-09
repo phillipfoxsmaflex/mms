@@ -18,6 +18,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.util.*;
+import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -94,6 +95,30 @@ public class WorkOrder extends WorkOrderBase {
     public boolean canBeEditedBy(OwnUser user) {
         return user.getRole().getEditOtherPermissions().contains(PermissionEntity.WORK_ORDERS)
                 || (this.getCreatedBy() != null && this.getCreatedBy().equals(user.getId())) || isAssignedTo(user);
+    }
+
+    @JsonIgnore
+    public Vendor getVendor() {
+        // Return the vendor from the parent request if it exists, otherwise null
+        return this.getParentRequest() != null ? this.getParentRequest().getVendor() : null;
+    }
+
+    @JsonIgnore
+    public Date getStartDate() {
+        // Return the estimated start date
+        return this.getEstimatedStartDate();
+    }
+
+    @JsonIgnore
+    public Date getEndDate() {
+        // Calculate end date based on estimated start date and duration
+        if (this.getEstimatedStartDate() != null && this.getEstimatedDuration() > 0) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(this.getEstimatedStartDate());
+            calendar.add(Calendar.HOUR, (int) this.getEstimatedDuration());
+            return calendar.getTime();
+        }
+        return null;
     }
 
     //in days

@@ -29,6 +29,8 @@ public interface UserRepository extends JpaRepository<OwnUser, Long>, JpaSpecifi
 
     Collection<OwnUser> findByLocation_Id(Long id);
 
+    Collection<OwnUser> findByCompany_IdAndRole_RoleType(Long companyId, com.grash.model.enums.RoleType roleType);
+
     Optional<OwnUser> findByEmailIgnoreCaseAndCompany_Id(String email, Long companyId);
 
     Optional<OwnUser> findByIdAndCompany_Id(Long id, Long companyId);

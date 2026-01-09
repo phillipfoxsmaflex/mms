@@ -63,6 +63,10 @@ public abstract class WorkOrderBase extends CompanyAudit {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private List<OwnUser> assignedTo = new ArrayList<>();
 
+    @ManyToOne
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED, withModifiedFlag = true)
+    private ContractorEmployee assignedToEmployee;
+
     @ManyToMany
     @NotAudited
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -76,6 +80,10 @@ public abstract class WorkOrderBase extends CompanyAudit {
     @ManyToOne
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED, withModifiedFlag = true)
     private Asset asset;
+    
+    @ManyToOne
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED, withModifiedFlag = true)
+    private Vendor vendor;
 
     @JsonIgnore
     public Collection<OwnUser> getUsers() {
@@ -91,6 +99,11 @@ public abstract class WorkOrderBase extends CompanyAudit {
         }
         return users.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparingLong(OwnUser::getId))),
                 ArrayList::new));
+    }
+
+    @JsonIgnore
+    public boolean isAssignedToContractorEmployee(ContractorEmployee employee) {
+        return this.getAssignedToEmployee() != null && this.getAssignedToEmployee().getId().equals(employee.getId());
     }
 
     public void setEstimatedDuration(double estimatedDuration) {

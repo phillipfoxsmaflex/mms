@@ -13,6 +13,7 @@ interface LocationState {
   locations: Location[];
   locationsHierarchy: LocationRow[];
   locationsMini: LocationMiniDTO[];
+  singleLocation: Location;
   loadingGet: boolean;
 }
 
@@ -20,6 +21,7 @@ const initialState: LocationState = {
   locations: [],
   locationsHierarchy: [],
   locationsMini: [],
+  singleLocation: null,
   loadingGet: false
 };
 
@@ -105,6 +107,13 @@ const slice = createSlice({
     },
     resetHierarchy(state: LocationState, action: PayloadAction<{}>) {
       state.locationsHierarchy = [];
+    },
+    getSingleLocation(
+      state: LocationState,
+      action: PayloadAction<{ location: Location }>
+    ) {
+      const { location } = action.payload;
+      state.singleLocation = location;
     }
   }
 });
@@ -144,7 +153,7 @@ export const getSingleLocation =
   (id: number): AppThunk =>
   async (dispatch) => {
     const locationResponse = await api.get<Location>(`locations/${id}`);
-    dispatch(slice.actions.editLocation({ location: locationResponse }));
+    dispatch(slice.actions.getSingleLocation({ location: locationResponse }));
   };
 export const deleteLocation =
   (id: number): AppThunk =>

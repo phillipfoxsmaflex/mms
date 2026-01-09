@@ -7,6 +7,7 @@ import { Audit } from './audit';
 import { CustomerMiniDTO } from './customer';
 import Category from './category';
 import { Priority } from './workOrder';
+import { ContractorEmployeeMiniDTO } from './contractorEmployee';
 
 export interface WorkOrderBase extends Audit {
   title: string;
@@ -20,6 +21,7 @@ export interface WorkOrderBase extends Audit {
   location: LocationMiniDTO;
   primaryUser: UserMiniDTO;
   assignedTo: UserMiniDTO[];
+  assignedToEmployee: ContractorEmployeeMiniDTO | null;
   customers: CustomerMiniDTO[];
   dueDate: string;
   category: Category | null;

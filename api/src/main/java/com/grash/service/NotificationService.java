@@ -42,6 +42,13 @@ public class NotificationService {
     }
 
     @Async
+    public Notification create(Notification notification, boolean mobile, String title) {
+        Notification savedNotification = notificationRepository.save(notification);
+        messagingTemplate.convertAndSend("/notifications/" + notification.getUser().getId(), savedNotification);
+        return savedNotification;
+    }
+
+    @Async
     public void createMultiple(List<Notification> notifications, boolean mobile, String title) {
         List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
         savedNotifications.forEach(notification ->
@@ -76,6 +83,26 @@ public class NotificationService {
 
     public Optional<Notification> findById(Long id) {
         return notificationRepository.findById(id);
+    }
+
+    public boolean wasNotificationSentForSafetyInstruction(Long safetyInstructionId, int daysBeforeExpiration) {
+        // Implement logic to check if notification was already sent
+        // This could be based on a separate tracking table or notification content
+        return notificationRepository.existsByResourceIdAndMessageContaining(
+            safetyInstructionId, 
+            daysBeforeExpiration == 0 ? "abgelaufen" : String.format("in %d Tagen", daysBeforeExpiration)
+        );
+    }
+
+    public void markSafetyInstructionNotificationSent(Long safetyInstructionId, int daysBeforeExpiration) {
+        // This method could create a tracking record or just rely on the notification itself
+        // For now, we'll just log it
+    }
+
+    public Collection<OwnUser> findAdminsForCompany(Long companyId) {
+        // Implement logic to find admin users for a company
+        // This is a placeholder - actual implementation depends on your user/role structure
+        return Collections.emptyList();
     }
 
     public Collection<Notification> findByUser(Long id) {

@@ -25,6 +25,8 @@ Die bestehende `docker-compose.yml` enthält:
 - MMS Frontend (atlas-cmms-frontend)
 - MinIO (atlas_minio)
 
+Wenn die bestehende docker-comnpose struktur angepasst wird änder auch die Bezeichnungen der atlas-cmms-backend und atlas-cmms-frontend sowie der atlas_db in mmms. Beachte bei der änderungen die Abhängigkeiten und änder wenn nötig auch diese mit.
+
 ### Neue Services
 
 #### InfluxDB 2.x

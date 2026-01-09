@@ -9,5 +9,7 @@ public enum NotificationType {
     LOCATION,
     TEAM,
     REQUEST,
-    PURCHASE_ORDER
+    PURCHASE_ORDER,
+    SAFETY_INSTRUCTION_EXPIRATION,
+    WARNING
 }

@@ -44,6 +44,9 @@ import { reducer as licenseReducer } from 'src/slices/license';
 import { reducer as documentReducer } from 'src/slices/document';
 import { reducer as locationImageReducer } from 'src/slices/locationImage';
 import { reducer as assetHotspotReducer } from 'src/slices/assetHotspot';
+import { reducer as safetyInstructionReducer } from 'src/slices/safetyInstruction';
+import { reducer as contractorEmployeeReducer } from 'src/slices/contractorEmployee';
+import { reducer as contractorCalendarReducer } from 'src/slices/contractorCalendar';
 
 const rootReducer = combineReducers({
   calendar: calendarReducer,
@@ -90,7 +93,10 @@ const rootReducer = combineReducers({
   license: licenseReducer,
   documents: documentReducer,
   locationImages: locationImageReducer,
-  assetHotspots: assetHotspotReducer
+  assetHotspots: assetHotspotReducer,
+  safetyInstructions: safetyInstructionReducer,
+  contractorEmployees: contractorEmployeeReducer,
+  contractorCalendar: contractorCalendarReducer
 });
 
 export default rootReducer;

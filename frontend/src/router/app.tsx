@@ -93,6 +93,26 @@ const PeopleAndTeams = Loader(
   lazy(() => import('../content/own/PeopleAndTeams'))
 );
 
+const ContractorCalendar = Loader(
+  lazy(() => import('../components/Authenticated/ContractorCalendar'))
+);
+
+const ContractorEmployeeList = Loader(
+  lazy(() => import('../components/Authenticated/ContractorEmployeeList'))
+);
+
+const SafetyInstructionList = Loader(
+  lazy(() => import('../components/Authenticated/SafetyInstructionList'))
+);
+
+const SafetyInstructionDetail = Loader(
+  lazy(() => import('../components/Authenticated/SafetyInstructionDetail'))
+);
+
+const SafetyInstructionForm = Loader(
+  lazy(() => import('../components/Authenticated/SafetyInstructionForm'))
+);
+
 const Imports = Loader(lazy(() => import('../content/own/Imports')));
 const Upgrade = Loader(
   lazy(() => import('../content/own/UpgradeAndDowngrade/Upgrade'))
@@ -345,6 +365,36 @@ const appRoutes = [
         ]
         // element: <PeopleAndTeams />
       }
+    ]
+  },
+  {
+    path: 'contractors',
+    children: [
+      {
+        path: 'calendar',
+        children: [
+          { path: '', element: <ContractorCalendar /> },
+          { path: ':vendorId', element: <ContractorCalendar /> },
+          { path: 'create', element: <ContractorCalendar /> }
+        ]
+      },
+      {
+        path: 'employees',
+        children: [
+          { path: '', element: <ContractorEmployeeList /> },
+          { path: ':employeeId', element: <ContractorEmployeeList /> },
+          { path: 'create', element: <ContractorEmployeeList /> }
+        ]
+      }
+    ]
+  },
+  {
+    path: 'safety-instructions',
+    children: [
+      { path: '', element: <SafetyInstructionList /> },
+      { path: 'create', element: <SafetyInstructionForm /> },
+      { path: ':instructionId', element: <SafetyInstructionDetail /> },
+      { path: ':instructionId/edit', element: <SafetyInstructionForm /> }
     ]
   },
   {
