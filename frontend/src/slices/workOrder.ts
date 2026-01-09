@@ -12,6 +12,7 @@ import {
 import PreventiveMaintenance from 'src/models/owns/preventiveMaintenance';
 import { revertAll } from 'src/utils/redux';
 import File from '../models/owns/file';
+import { formatDateForBackend } from 'src/utils/dateUtils';
 
 const basePath = 'work-orders';
 
@@ -380,13 +381,13 @@ export const updateWorkOrderDates =
       
       // Prepare the update data
       const updateData: any = {
-        estimatedStartDate: startDate.toISOString()
+        estimatedStartDate: formatDateForBackend(startDate)
       };
 
       // Only include end date if provided
       if (endDate) {
-        updateData.dueDate = endDate.toISOString();
-        console.log('Setting due date to:', endDate.toISOString());
+        updateData.dueDate = formatDateForBackend(endDate);
+        console.log('Setting due date to:', formatDateForBackend(endDate));
       } else {
         console.log('No end date provided, due date will not be updated');
       }

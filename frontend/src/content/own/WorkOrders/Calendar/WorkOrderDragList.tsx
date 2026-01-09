@@ -81,12 +81,6 @@ const WorkOrderDragList = () => {
     }
   };
 
-  const handleDragStart = (event: React.DragEvent<HTMLLIElement>, workOrder: WorkOrderBaseMiniDTO) => {
-    event.dataTransfer.setData('text/plain', workOrder.id.toString());
-    event.dataTransfer.setData('workOrderId', workOrder.id.toString());
-    event.dataTransfer.effectAllowed = 'move';
-  };
-
   const handleRefresh = () => {
     setIsLoading(true);
     dispatch(getWorkOrders({
@@ -189,8 +183,6 @@ const WorkOrderDragList = () => {
             {filteredWorkOrders.map((workOrder, index) => (
               <React.Fragment key={workOrder.id}>
                 <ListItem
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, workOrder)}
                   data-work-order-id={workOrder.id}
                   sx={{
                     cursor: 'grab',

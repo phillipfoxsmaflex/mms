@@ -31,6 +31,7 @@ import { usePrevious } from '../../../../hooks/usePrevious';
 import { supportedLanguages } from '../../../../i18n/i18n';
 import WorkOrderDragList from './WorkOrderDragList';
 import { CustomSnackBarContext } from 'src/contexts/CustomSnackBarContext';
+import { formatDateForBackend } from 'src/utils/dateUtils';
 
 const FullCalendarWrapper = styled(Box)(
   ({ theme }) => `
@@ -141,9 +142,10 @@ function ApplicationsCalendar({
   const { showSnackBar } = useContext(CustomSnackBarContext);
 
   const calendarRef = useRef<FullCalendar | null>(null);
+  const draggableRef = useRef<Draggable | null>(null);
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
   const dispatch = useDispatch();
-  const { calendar, loadingGet } = useSelector((state) => state.workOrders);
+  const { calendar, loadingGet, workOrders } = useSelector((state) => state.workOrders);
   const [date, setDate] = useState<Date>(new Date());
   const [view, setView] = useState<View>('timeGridWeek');
   const getLanguage = i18n.language;
@@ -308,11 +310,19 @@ function ApplicationsCalendar({
             end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
           }
           
+          console.log('Event times before formatting:', {
+            id,
+            startLocal: start.toString(),
+            startISO: start.toISOString(),
+            endLocal: end.toString(),
+            endISO: end.toISOString()
+          });
+          
           return {
             id: id,
-            title: title,  // Backend requires this field!
-            estimatedStartDate: start.toISOString(),
-            dueDate: end.toISOString()
+            title: title,
+            estimatedStartDate: formatDateForBackend(start),
+            dueDate: formatDateForBackend(end)
           };
         });
 
@@ -438,9 +448,16 @@ function ApplicationsCalendar({
       const externalContainer = document.querySelector('[data-work-order-list]') as HTMLElement;
       
       if (externalContainer) {
-        console.log('Initializing Draggable for WorkOrderDragList');
+        console.log('(Re)initializing Draggable for WorkOrderDragList...');
         
-        new Draggable(externalContainer, {
+        // Destroy previous Draggable instance if it exists
+        if (draggableRef.current) {
+          console.log('Destroying previous Draggable instance');
+          draggableRef.current.destroy();
+        }
+        
+        // Create new Draggable instance
+        draggableRef.current = new Draggable(externalContainer, {
           itemSelector: '[data-work-order-id]',
           eventData: function(eventEl) {
             const workOrderId = eventEl.getAttribute('data-work-order-id');
@@ -456,13 +473,23 @@ function ApplicationsCalendar({
             };
           }
         });
+        
+        console.log('Draggable initialized successfully');
       } else {
         console.warn('WorkOrderDragList container not found for Draggable initialization');
       }
-    }, 500);
+    }, 300);
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+      // Cleanup: destroy Draggable on unmount
+      if (draggableRef.current) {
+        console.log('Cleaning up Draggable instance');
+        draggableRef.current.destroy();
+        draggableRef.current = null;
+      }
+    };
+  }, [workOrders.content]); // Re-initialize when work orders change
 
   const changeView = (changedView: View): void => {
     const calItem = calendarRef.current;
