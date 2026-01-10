@@ -121,7 +121,7 @@ export const editVendor =
       dispatch(slice.actions.editVendor({ vendor: vendorResponse }));
     };
 export const getVendorsMini = (): AppThunk => async (dispatch) => {
-  const vendors = await api.get<Vendor[]>('vendors/mini');
+  const vendors = await api.get<VendorMiniDTO[]>('vendors/mini');
   dispatch(slice.actions.getVendorsMini({ vendors }));
 };
 export const addVendor =

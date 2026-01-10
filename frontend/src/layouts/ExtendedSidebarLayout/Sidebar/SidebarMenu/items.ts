@@ -232,12 +232,8 @@ const ownMenuItems: MenuItems[] = [
             link: '/app/vendors-customers/vendors'
           },
           {
-            name: 'customers',
-            link: '/app/vendors-customers/customers'
-          },
-          {
             name: 'contractors',
-            link: '/app/contractors/calendar',
+            link: '/app/vendors-customers/customers',
             items: [
               {
                 name: 'contractor_calendar',

@@ -1,5 +1,6 @@
 package com.grash.model;
 
+import com.grash.model.abstracts.DateAudit;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -8,7 +9,7 @@ import javax.persistence.*;
 @Entity
 @Data
 @NoArgsConstructor
-public class ContractorEmployee {
+public class ContractorEmployee extends DateAudit {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

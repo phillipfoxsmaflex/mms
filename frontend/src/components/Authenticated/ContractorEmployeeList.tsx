@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { debounce } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { useDispatch, RootState } from 'src/store';
 import {
@@ -22,27 +23,28 @@ import {
   CircularProgress,
   Box,
   Typography,
-  Chip
+  Chip,
+  TextField,
+  InputAdornment
 } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
 import { SearchCriteria } from 'src/models/owns/page';
 import { checkEmployeeInstructionValid } from 'src/slices/safetyInstruction';
 
 const ContractorEmployeeList: React.FC<{ vendorId?: number }> = ({ vendorId }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Check if we're in create mode
-  const isCreateMode = location.pathname.endsWith('/create');
+
   
   const { contractorEmployees, loadingGet } = useSelector((state: RootState) => state.contractorEmployees);
   
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
   const [instructionStatus, setInstructionStatus] = useState<Record<number, boolean>>({});
   
   useEffect(() => {
@@ -54,11 +56,16 @@ const ContractorEmployeeList: React.FC<{ vendorId?: number }> = ({ vendorId }) =
         pageSize: rowsPerPage,
         sortField: 'createdAt',
         direction: 'DESC',
-        filterFields: []
+        filterFields: searchQuery ? [
+          { field: 'firstName', value: searchQuery, operation: 'cn' },
+          { field: 'lastName', value: searchQuery, operation: 'cn' },
+          { field: 'email', value: searchQuery, operation: 'cn' },
+          { field: 'position', value: searchQuery, operation: 'cn' }
+        ] : []
       };
       dispatch(getContractorEmployees(criteria));
     }
-  }, [dispatch, page, rowsPerPage, vendorId]);
+  }, [dispatch, page, rowsPerPage, vendorId, searchQuery]);
 
   useEffect(() => {
     // Check instruction validity for all employees
@@ -78,6 +85,16 @@ const ContractorEmployeeList: React.FC<{ vendorId?: number }> = ({ vendorId }) =
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+    setPage(0); // Reset to first page when searching
+  };
+
+  const debouncedSearchChange = useMemo(
+    () => debounce(handleSearchChange, 500),
+    []
+  );
 
   const handleDelete = (id: number) => {
     if (window.confirm('Sind Sie sicher, dass Sie diesen Mitarbeiter löschen möchten?')) {
@@ -104,40 +121,37 @@ const ContractorEmployeeList: React.FC<{ vendorId?: number }> = ({ vendorId }) =
   return (
     <Card>
       <Box display="flex" justifyContent="space-between" alignItems="center" p={2}>
-        <Typography variant="h3">
-          {isCreateMode ? 'Neuen Mitarbeiter erstellen' : 'Mitarbeiter von Auftragnehmern'}
-        </Typography>
-        {!isCreateMode && (
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={handleAdd}
-          >
-            Neuen Mitarbeiter hinzufügen
-          </Button>
-        )}
+        <Typography variant="h3">Mitarbeiter von Auftragnehmern</Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={handleAdd}
+        >
+          Neuen Mitarbeiter hinzufügen
+        </Button>
       </Box>
       
-      {isCreateMode ? (
-        <Box p={4} textAlign="center">
-          <Typography variant="body1" paragraph>
-            Die Erstellungsfunktion für Auftragnehmer-Mitarbeiter wird bald verfügbar sein.
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Bitte verwenden Sie vorerst die bestehende Mitarbeiterverwaltung.
-          </Typography>
-          <Box mt={3}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => navigate('/app/contractors/employees')}
-            >
-              Zurück zur Mitarbeiterliste
-            </Button>
-          </Box>
-        </Box>
-      ) : loadingGet ? (
+      <Box p={2}>
+        <TextField
+          fullWidth
+          label="Suche"
+          variant="outlined"
+          placeholder="Nach Name, E-Mail oder Position suchen..."
+          value={searchQuery}
+          onChange={debouncedSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            )
+          }}
+          size="small"
+        />
+      </Box>
+      
+      {loadingGet ? (
         <Box display="flex" justifyContent="center" p={4}>
           <CircularProgress />
         </Box>

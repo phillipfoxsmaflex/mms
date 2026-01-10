@@ -101,6 +101,10 @@ const ContractorEmployeeList = Loader(
   lazy(() => import('../components/Authenticated/ContractorEmployeeList'))
 );
 
+const ContractorEmployeeForm = Loader(
+  lazy(() => import('../components/Authenticated/ContractorEmployeeForm'))
+);
+
 const SafetyInstructionList = Loader(
   lazy(() => import('../components/Authenticated/SafetyInstructionList'))
 );
@@ -383,7 +387,8 @@ const appRoutes = [
         children: [
           { path: '', element: <ContractorEmployeeList /> },
           { path: ':employeeId', element: <ContractorEmployeeList /> },
-          { path: 'create', element: <ContractorEmployeeList /> }
+          { path: 'create', element: <ContractorEmployeeForm /> },
+          { path: ':employeeId/edit', element: <ContractorEmployeeForm /> }
         ]
       }
     ]

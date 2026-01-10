@@ -25,20 +25,23 @@ Die bestehende `docker-compose.yml` enthält:
 - MMS Frontend (atlas-cmms-frontend)
 - MinIO (atlas_minio)
 
-Wenn die bestehende docker-comnpose struktur angepasst wird änder auch die Bezeichnungen der atlas-cmms-backend und atlas-cmms-frontend sowie der atlas_db in mmms. Beachte bei der änderungen die Abhängigkeiten und änder wenn nötig auch diese mit.
+Wenn die bestehende docker-comnpose struktur angepasst wird änder auch die Bezeichnungen der atlas-cmms-backend und atlas-cmms-frontend sowie der atlas_db in mmms. Beachte bei der änderungen die Abhängigkeiten und änder wenn nötig auch diese mit. Benenne auch das atlas_network in mms_network um
 
 ### Neue Services
 
-#### InfluxDB 2.x
+Beim der Umsetzung des Konzeptes ist es wichtig, dass alle notwendigen abhängigkeiten für das deployment im Docker stack mit berücksichtig werden. Z.B Erweiterung der docker files der Initialisierung, das anpassen des .env files wenn nötig.
+Die Grafana UI sollte zudem erreichbar sein genau wie die influx db Ui damit der administrator hier notwendige einstellung vornehmen kann. hier kann es sinvoll sein ein initial password über die .env datei aufzusetze wenn grafana oder influx db kein initialen registrierungsprozess out off the box besitzen.
+
+#### InfluxDB 3.x
 ```yaml
 influxdb:
-  image: influxdb:2.7-alpine
+  image: influxdb:latest
   container_name: atlas_influxdb
   environment:
     DOCKER_INFLUXDB_INIT_MODE: setup
     DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER}
     DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
-    DOCKER_INFLUXDB_INIT_ORG: atlas
+    DOCKER_INFLUXDB_INIT_ORG: mms
     DOCKER_INFLUXDB_INIT_BUCKET: assets
     DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
   volumes:
@@ -46,7 +49,7 @@ influxdb:
   ports:
     - "8086:8086"
   networks:
-    - atlas-network
+    - mms-network
   restart: unless-stopped
 ```
 
@@ -68,7 +71,7 @@ grafana:
   ports:
     - "3001:3000"
   networks:
-    - atlas-network
+    - mms_network
   depends_on:
     - influxdb
   restart: unless-stopped
@@ -651,7 +654,7 @@ const AlertingDashboardSettings = Loader(
 
 ### Authentifizierung
 - Grafana sollte mit API-Tokens konfiguriert werden
-- InfluxDB-Zugriff sollte auf das Docker-Netzwerk beschränkt sein
+- InfluxDB-Zugriff sollte auf das Docker-Netzwerk beschränkt sein, es muss aber nöglich sein auch von außerhalb des netzwerkes daten in die db schreiben zu können
 - CORS-Einstellungen für Grafana anpassen
 
 ### Datenvalidierung
@@ -735,17 +738,6 @@ echo "Setup abgeschlossen!"
 - Mindestens 4GB RAM für Entwicklung
 - 8GB RAM empfohlen für Produktion
 
-## 11. Zeitplan
-
-| Phase | Aufgaben | Dauer |
-|-------|---------|-------|
-| 1 | Docker-Stack-Erweiterung | 2 Tage |
-| 2 | Backend-API-Erweiterungen | 3 Tage |
-| 3 | Frontend-Komponenten | 5 Tage |
-| 4 | Integration & Testing | 3 Tage |
-| 5 | Dokumentation & Deployment | 2 Tage |
-| **Gesamt** | | **15 Tage** |
-
 ## 12. Risiken und Mitigationsstrategien
 
 | Risiko | Auswirkung | Mitigation |
@@ -787,8 +779,8 @@ echo "Setup abgeschlossen!"
 - Automatische Dashboard-Erstellung basierend auf Asset-Typen
 - Integration mit bestehenden MMS-Daten (Work Orders, Maintenance History)
 - Machine-Learning-basierte Anomalieerkennung
-- Mobile App-Integration für Push-Benachrichtigungen
 - Export-Funktionalität für Berichte
+- WO Erstellen basierend auf Daten aus der Influx DB, könnte im workflow modul umgesetzet werden
 
 ## Fazit
 
